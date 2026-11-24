@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Buddy - OBS Stream Overlay</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: transparent !important;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      user-select: none;
+    }
+
+    #pet-container {
+      position: relative;
+      width: 420px;
+      height: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      pointer-events: none;
+    }
+
+    /* Thought Bubble Container */
+    #thought-bubble {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      transform-origin: bottom center;
+      opacity: 0;
+      transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.35s ease;
+      z-index: 20;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 360px;
+      min-width: 240px;
+    }
+
+    #thought-bubble.active {
+      transform: translateX(-50%) scale(1);
+      opacity: 1;
+    }
+
+    /* Cloud Thought Bubble Body */
+    .bubble-card {
+      background: #ffffff;
+      border: 4px solid #f59e0b;
+      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.35), 0 0 20px rgba(245, 158, 11, 0.45);
+      border-radius: 28px;
+      padding: 14px 22px;
+      text-align: center;
+      position: relative;
+      color: #1f2937;
+      animation: gentle-float 2.8s ease-in-out infinite;
+    }
+
+    @keyframes gentle-float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .bubble-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      padding: 3px 12px;
+      border-radius: 999px;
+      margin-bottom: 6px;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    .bubble-message {
+      font-size: 19px;
+      font-weight: 800;
+      line-height: 1.25;
+      color: #111827;
+      word-break: break-word;
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
+    }
+
+    .bubble-subname {
+      color: #d97706;
+      font-weight: 900;
+      text-decoration: underline wavy #f59e0b;
+    }
+
+    .bubble-footer {
+      font-size: 13px;
+      color: #6b7280;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* Thought Bubble Little Clouds / Dots leading to dog head */
+    .thought-dots {
+      position: relative;
+      width: 100%;
+      height: 40px;
+      pointer-events: none;
+    }
+
+    .thought-dot {
+      position: absolute;
+      background: #ffffff;
+      border: 3.5px solid #f59e0b;
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .dot-1 {
+      width: 22px;
+      height: 22px;
+      top: -4px;
+      left: 48%;
+      transform: translateX(-50%);
+    }
+
+    .dot-2 {
+      width: 15px;
+      height: 15px;
+      top: 15px;
+      left: 52%;
+    }
+
+    .dot-3 {
+      width: 9px;
+      height: 9px;
+      top: 29px;
+      left: 54%;
+    }
+
+    /* Canvas Character */
+    #pet-canvas {
+      width: 320px;
+      height: 320px;
+      image-rendering: auto;
+      z-index: 10;
+      filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.38));
+    }
+
+    /* Sparkle Particle FX */
+    .sparkle-particle {
+      position: absolute;
+      pointer-events: none;
+      z-index: 30;
+      animation: burst-fade 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    @keyframes burst-fade {
+      0% {
+        transform: translate(0, 0) scale(0.4) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(var(--tx), var(--ty)) scale(1.3) rotate(180deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="pet-container">
+    <!-- Thought Bubble -->
+    <div id="thought-bubble">
+      <div class="bubble-card">
+        <div class="bubble-badge" id="bubble-badge">✨ NEW SUBSCRIBER ✨</div>
+        <div class="bubble-message" id="bubble-message">
+          Thank you, <span class="bubble-subname" id="bubble-subname">Friend</span>! 🐾💖
+        </div>
+        <div class="bubble-footer" id="bubble-footer">Welcome to the pack!</div>
+      </div>
+      <div class="thought-dots">
+        <div class="thought-dot dot-1"></div>
+        <div class="thought-dot dot-2"></div>
+        <div class="thought-dot dot-3"></div>
+      </div>
+    </div>
+
+    <!-- Canvas Animation -->
+    <canvas id="pet-canvas" width="320" height="320"></canvas>
+  </div>
+
+  <script>
+    // --- SPRITE DATA & CONFIGURATION ---
+    const SPRITE_CONFIG = {
+      image_src: 'spritesheet.png',
+      frame_size: 320,
+      sequences: {
+        idle: { row: 0, count: 8, fps: 8, loop: true },
+        tail_wag: { row: 1, count: 8, fps: 12, loop: true },
+        blinking: { row: 2, count: 4, fps: 6, loop: false },
+        jumping: { row: 3, count: 8, fps: 10, loop: false },
+        happy: { row: 4, count: 6, fps: 8, loop: true }
+      }
+    };
+
+    // --- STATE VARIABLES ---
+    let currentSequence = 'idle';
+    let currentFrame = 0;
+    let sequenceLoopCount = 0;
+    let targetLoopCount = 1;
+    let lastFrameTime = 0;
+    let spriteImage = new Image();
+    let isSpriteLoaded = false;
+
+    // Overlay Settings (can be controlled via Control Dock or URL params)
+    const settings = {
+      enableTTS: true,
+      ttsVolume: 0.9,
+      ttsRate: 1.05,
+      ttsPitch: 1.25, // Playful cute voice
+      enableSound: true,
+      bubbleDuration: 5500, // ms
+      randomFrequency: 'normal', // 'off', 'calm', 'normal', 'hyper'
+      twitchChannel: ''
+    };
+
+    // Alert Queue for Subscribers
+    const alertQueue = [];
+    let isProcessingAlert = false;
+    let alertTimer = null;
+
+    // Canvas elements
+    const canvas = document.getElementById('pet-canvas');
+    const ctx = canvas.getContext('2d');
+    const thoughtBubble = document.getElementById('thought-bubble');
+    const bubbleBadge = document.getElementById('bubble-badge');
+    const bubbleMessage = document.getElementById('bubble-message');
+    const bubbleSubname = document.getElementById('bubble-subname');
+    const bubbleFooter = document.getElementById('bubble-footer');
+    const petContainer = document.getElementById('pet-container');
+
+    // --- SYNTHESIZED SOUND FX (Web Audio API) ---
+    let audioCtx = null;
+    function playHappyChime() {
+      if (!settings.enableSound) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const now = audioCtx.currentTime;
+        // Two-tone cheerful chime (E5 -> G#5 -> B5)
+        const notes = [659.25, 830.61, 987.77];
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+
+          gain.gain.setValueAtTime(0, now + idx * 0.12);
+          gain.gain.linearRampToValueAtTime(0.25, now + idx * 0.12 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.35);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start(now + idx * 0.12);
+          osc.stop(now + idx * 0.12 + 0.4);
+        });
+      } catch (err) {
+        console.warn('Audio play error:', err);
+      }
+    }
+
+    // --- TEXT TO SPEECH (Web Speech API) ---
+    function speakText(text) {
+      if (!settings.enableTTS || !('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel(); // clear previous
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.volume = settings.ttsVolume;
+        utterance.rate = settings.ttsRate;
+        utterance.pitch = settings.ttsPitch;
+
+        // Try selecting a natural English voice if available
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Zira') || v.name.includes('Samantha')));
+        if (preferredVoice) utterance.voice = preferredVoice;
+
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.warn('TTS error:', e);
+      }
+    }
+
+    // --- SPARKLE BURST GENERATOR ---
+    function spawnSparkles(count = 14) {
+      const symbols = ['✨', '⭐', '💖', '🐾', '🌟'];
+      const rect = thoughtBubble.getBoundingClientRect();
+      const originX = rect.width / 2;
+      const originY = rect.height / 2;
+
+      for (let i = 0; i < count; i++) {
+        const span = document.createElement('span');
+        span.className = 'sparkle-particle';
+        span.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        span.style.fontSize = (16 + Math.random() * 14) + 'px';
+        span.style.left = originX + 'px';
+        span.style.top = originY + 'px';
+
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 70 + Math.random() * 90;
+        const tx = Math.cos(angle) * dist + 'px';
+        const ty = (Math.sin(angle) * dist - 20) + 'px';
+        span.style.setProperty('--tx', tx);
+        span.style.setProperty('--ty', ty);
+
+        thoughtBubble.appendChild(span);
+        setTimeout(() => span.remove(), 1300);
+      }
+    }
+
+    // --- ANIMATION CONTROLLER ---
+    function setSequence(seqName, loops = 1) {
+      if (!SPRITE_CONFIG.sequences[seqName]) return;
+      currentSequence = seqName;
+      currentFrame = 0;
+      sequenceLoopCount = 0;
+      targetLoopCount = loops;
+    }
+
+    // --- RENDER LOOP ---
+    function animate(now) {
+      requestAnimationFrame(animate);
+
+      if (!isSpriteLoaded) return;
+
+      const seq = SPRITE_CONFIG.sequences[currentSequence];
+      const frameInterval = 1000 / seq.fps;
+
+      if (now - lastFrameTime >= frameInterval) {
+        lastFrameTime = now;
+
+        // Draw current frame from master sprite sheet
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const sx = currentFrame * SPRITE_CONFIG.frame_size;
+        const sy = seq.row * SPRITE_CONFIG.frame_size;
+
+        ctx.drawImage(
+          spriteImage,
+          sx, sy, SPRITE_CONFIG.frame_size, SPRITE_CONFIG.frame_size,
+          0, 0, canvas.width, canvas.height
+        );
+
+        // Advance frame
+        currentFrame++;
+        if (currentFrame >= seq.count) {
+          currentFrame = 0;
+          sequenceLoopCount++;
+
+          // Handle transitions if we finished target loops (when not in alert)
+          if (!isProcessingAlert && currentSequence !== 'idle') {
+            if (sequenceLoopCount >= targetLoopCount) {
+              setSequence('idle');
+            }
+          }
+        }
+      }
+    }
+
+    // --- RANDOM ANIMATION BEHAVIOR ENGINE ---
+    let randomTimer = null;
+    function scheduleNextRandomAnimation() {
+      if (settings.randomFrequency === 'off') return;
+
+      // Intervals based on frequency
+      let minDelay = 4000;
+      let maxDelay = 9000;
+
+      if (settings.randomFrequency === 'calm') {
+        minDelay = 7000;
+        maxDelay = 16000;
+      } else if (settings.randomFrequency === 'hyper') {
+        minDelay = 2500;
+        maxDelay = 6000;
+      }
+
+      const delay = Math.random() * (maxDelay - minDelay) + minDelay;
+
+      clearTimeout(randomTimer);
+      randomTimer = setTimeout(() => {
+        if (!isProcessingAlert && currentSequence === 'idle') {
+          triggerRandomReaction();
+        }
+        scheduleNextRandomAnimation();
+      }, delay);
+    }
+
+    function triggerRandomReaction() {
+      const roll = Math.random();
+      if (roll < 0.45) {
+        // Tail wag (2 to 4 cycles)
+        setSequence('tail_wag', Math.floor(Math.random() * 3) + 2);
+      } else if (roll < 0.70) {
+        // Blink
+        setSequence('blinking', 1);
+      } else if (roll < 0.88) {
+        // Playful Jump
+        setSequence('jumping', 1);
+      } else {
+        // Happy smile & glints
+        setSequence('happy', 2);
+      }
+    }
+
+    // --- SUBSCRIBER ALERT HANDLER ---
+    function triggerSubscriberAlert(subData) {
+      alertQueue.push(subData);
+      if (!isProcessingAlert) {
+        processNextAlert();
+      }
+    }
+
+    function processNextAlert() {
+      if (alertQueue.length === 0) {
+        isProcessingAlert = false;
+        thoughtBubble.classList.remove('active');
+        setSequence('idle');
+        scheduleNextRandomAnimation();
+        return;
+      }
+
+      isProcessingAlert = true;
+      clearTimeout(alertTimer);
+
+      const data = alertQueue.shift();
+      const subscriberName = data.name || 'Anonymous Fan';
+      const tier = data.tier || 'Tier 1';
+      const customMsg = data.message;
+
+      // 1. Update Thought Bubble content
+      bubbleBadge.textContent = `✨ NEW ${tier.toUpperCase()} SUBSCRIBER! ✨`;
+      bubbleSubname.textContent = subscriberName;
+      if (customMsg) {
+        bubbleFooter.textContent = `"${customMsg}"`;
+      } else {
+        bubbleFooter.textContent = 'Welcome to the pack! 🐾';
+      }
+
+      // 2. Play reaction: Exciting jump first, then switch to happy loop!
+      setSequence('jumping', 1);
+      setTimeout(() => {
+        if (isProcessingAlert) {
+          setSequence('happy', 999); // loop happy while bubble is visible
+        }
+      }, 750);
+
+      // 3. Pop in bubble with audio & TTS
+      setTimeout(() => {
+        thoughtBubble.classList.add('active');
+        playHappyChime();
+        spawnSparkles(18);
+        speakText(`Thank you, ${subscriberName}!`);
+      }, 200);
+
+      // 4. Bubble display duration timer
+      alertTimer = setTimeout(() => {
+        thoughtBubble.classList.remove('active');
+        setTimeout(() => {
+          processNextAlert();
+        }, 500);
+      }, settings.bubbleDuration);
+    }
+
+    // --- MANUAL ACTION HANDLERS ---
+    function manualTriggerAnimation(animName, loops = 1) {
+      if (isProcessingAlert) return;
+      setSequence(animName, loops);
+    }
+
+    function manualCustomThought(message, duration = 4000) {
+      bubbleBadge.textContent = '💬 BUDDY SAYS';
+      bubbleMessage.innerHTML = `<span>${message}</span>`;
+      bubbleFooter.textContent = 'Woof! 🐾';
+      thoughtBubble.classList.add('active');
+      setSequence('happy', 999);
+      spawnSparkles(10);
+      playHappyChime();
+
+      clearTimeout(alertTimer);
+      alertTimer = setTimeout(() => {
+        thoughtBubble.classList.remove('active');
+        setSequence('idle');
+      }, duration);
+    }
+
+    // --- COMMUNICATION INTERFACES ---
+
+    // 1. BroadcastChannel (Real-time local communication with Control Dock)
+    try {
+      const channel = new BroadcastChannel('buddy_obs_channel');
+      channel.onmessage = (event) => {
+        handleControlMessage(event.data);
+      };
+    } catch (e) {
+      console.warn('BroadcastChannel not supported:', e);
+    }
+
+    // 2. LocalStorage event fallback
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'buddy_obs_command' && event.newValue) {
+        try {
+          const data = JSON.parse(event.newValue);
+          handleControlMessage(data);
+        } catch (e) {}
+      }
+    });
+
+    // 3. PostMessage interface
+    window.addEventListener('message', (event) => {
+      if (event.data) {
+        handleControlMessage(event.data);
+      }
+    });
+
+    function handleControlMessage(data) {
+      if (!data || !data.type) return;
+
+      switch (data.type) {
+        case 'SUBSCRIBER_ALERT':
+          triggerSubscriberAlert(data);
+          break;
+        case 'TRIGGER_ANIMATION':
+          manualTriggerAnimation(data.animation, data.loops || 1);
+          break;
+        case 'CUSTOM_THOUGHT':
+          manualCustomThought(data.text, data.duration || 4000);
+          break;
+        case 'UPDATE_SETTINGS':
+          Object.assign(settings, data.settings);
+          scheduleNextRandomAnimation();
+          break;
+      }
+    }
+
+    // --- URL PARAMETER PARSER ---
+    function parseURLParams() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('sub')) {
+        setTimeout(() => {
+          triggerSubscriberAlert({
+            name: params.get('sub'),
+            tier: params.get('tier') || 'Tier 1'
+          });
+        }, 1200);
+      }
+      if (params.has('tts')) {
+        settings.enableTTS = params.get('tts') !== '0' && params.get('tts') !== 'false';
+      }
+      if (params.has('sound')) {
+        settings.enableSound = params.get('sound') !== '0' && params.get('sound') !== 'false';
+      }
+      if (params.has('freq')) {
+        settings.randomFrequency = params.get('freq');
+      }
+      if (params.has('duration')) {
+        settings.bubbleDuration = parseInt(params.get('duration'), 10) || 5500;
+      }
+      if (params.has('twitch')) {
+        connectTwitchChat(params.get('twitch'));
+      }
+    }
+
+    // --- TWITCH CHAT WEBSOCKET INTEGRATION (OPTIONAL ZERO-CONFIG) ---
+    function connectTwitchChat(channelName) {
+      if (!channelName) return;
+      channelName = channelName.toLowerCase().replace('#', '');
+      const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+
+      ws.onopen = () => {
+        ws.send('CAP REQ :twitch.tv/commands twitch.tv/tags');
+        ws.send('PASS oauth:dummy');
+        ws.send('NICK justinfan' + Math.floor(Math.random() * 99999));
+        ws.send('JOIN #' + channelName);
+        console.log('Connected to Twitch chat for #' + channelName);
+      };
+
+      ws.onmessage = (msg) => {
+        const text = msg.data;
+        if (text.startsWith('PING')) {
+          ws.send('PONG :tmi.twitch.tv');
+          return;
+        }
+
+        // Sub / Resub notices
+        if (text.includes('USERNOTICE')) {
+          const matchSub = text.match(/msg-id=(sub|resub|subgift);/);
+          const matchUser = text.match(/display-name=([^;]+);/);
+          if (matchSub && matchUser) {
+            triggerSubscriberAlert({
+              name: matchUser[1],
+              tier: 'Twitch Sub'
+            });
+          }
+        }
+
+        // Streamer test command in chat: !sub <name>
+        if (text.includes('PRIVMSG')) {
+          const matchCmd = text.match(/!sub\s+([a-zA-Z0-9_]+)/i);
+          if (matchCmd) {
+            triggerSubscriberAlert({
+              name: matchCmd[1],
+              tier: 'Chat Alert'
+            });
+          }
+        }
+      };
+
+      ws.onerror = (e) => console.warn('Twitch WS error:', e);
+    }
+
+    // --- INITIALIZATION ---
+    function init() {
+      spriteImage.onload = () => {
+        isSpriteLoaded = true;
+        setSequence('idle');
+        scheduleNextRandomAnimation();
+        requestAnimationFrame(animate);
+      };
+      spriteImage.src = SPRITE_CONFIG.image_src;
+      parseURLParams();
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

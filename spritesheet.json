@@ -1,0 +1,663 @@
+{
+  "character": "Buddy the Cartoon Desktop Dog",
+  "frame_width": 320,
+  "frame_height": 320,
+  "total_frames": 34,
+  "sequences": {
+    "idle": {
+      "title": "Idle Breathing",
+      "description": "Gentle rhythmic chest expansion, subtle head bobbing, and relaxed tail sway",
+      "frame_count": 8,
+      "default_fps": 8,
+      "loop": true,
+      "files": [
+        "frames/idle/idle_0.png",
+        "frames/idle/idle_1.png",
+        "frames/idle/idle_2.png",
+        "frames/idle/idle_3.png",
+        "frames/idle/idle_4.png",
+        "frames/idle/idle_5.png",
+        "frames/idle/idle_6.png",
+        "frames/idle/idle_7.png"
+      ],
+      "spritesheet": "spritesheets/idle_sheet.png",
+      "frame_rects": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 320,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 640,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 960,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 1280,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 1600,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 1920,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 2240,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        }
+      ],
+      "master_rects": [
+        {
+          "frame": {
+            "x": 0,
+            "y": 0,
+            "w": 320,
+            "h": 320
+          },
+          "index": 0,
+          "sequence": "idle"
+        },
+        {
+          "frame": {
+            "x": 320,
+            "y": 0,
+            "w": 320,
+            "h": 320
+          },
+          "index": 1,
+          "sequence": "idle"
+        },
+        {
+          "frame": {
+            "x": 640,
+            "y": 0,
+            "w": 320,
+            "h": 320
+          },
+          "index": 2,
+          "sequence": "idle"
+        },
+        {
+          "frame": {
+            "x": 960,
+            "y": 0,
+            "w": 320,
+            "h": 320
+          },
+          "index": 3,
+          "sequence": "idle"
+        },
+        {
+          "frame": {
+            "x": 1280,
+            "y": 0,
+            "w": 320,
+            "h": 320
+          },
+          "index": 4,
+          "sequence": "idle"
+        },
+        {
+          "frame": {
+            "x": 1600,
+            "y": 0,
+            "w": 320,
+            "h": 320
+          },
+          "index": 5,
+          "sequence": "idle"
+        },
+        {
+          "frame": {
+            "x": 1920,
+            "y": 0,
+            "w": 320,
+            "h": 320
+          },
+          "index": 6,
+          "sequence": "idle"
+        },
+        {
+          "frame": {
+            "x": 2240,
+            "y": 0,
+            "w": 320,
+            "h": 320
+          },
+          "index": 7,
+          "sequence": "idle"
+        }
+      ]
+    },
+    "tail_wag": {
+      "title": "Tail Wagging",
+      "description": "Energetic sinusoidal tail wagging with natural hip weight transfer and alert ears",
+      "frame_count": 8,
+      "default_fps": 12,
+      "loop": true,
+      "files": [
+        "frames/tail_wag/tail_wag_0.png",
+        "frames/tail_wag/tail_wag_1.png",
+        "frames/tail_wag/tail_wag_2.png",
+        "frames/tail_wag/tail_wag_3.png",
+        "frames/tail_wag/tail_wag_4.png",
+        "frames/tail_wag/tail_wag_5.png",
+        "frames/tail_wag/tail_wag_6.png",
+        "frames/tail_wag/tail_wag_7.png"
+      ],
+      "spritesheet": "spritesheets/tail_wag_sheet.png",
+      "frame_rects": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 320,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 640,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 960,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 1280,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 1600,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 1920,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 2240,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        }
+      ],
+      "master_rects": [
+        {
+          "frame": {
+            "x": 0,
+            "y": 320,
+            "w": 320,
+            "h": 320
+          },
+          "index": 0,
+          "sequence": "tail_wag"
+        },
+        {
+          "frame": {
+            "x": 320,
+            "y": 320,
+            "w": 320,
+            "h": 320
+          },
+          "index": 1,
+          "sequence": "tail_wag"
+        },
+        {
+          "frame": {
+            "x": 640,
+            "y": 320,
+            "w": 320,
+            "h": 320
+          },
+          "index": 2,
+          "sequence": "tail_wag"
+        },
+        {
+          "frame": {
+            "x": 960,
+            "y": 320,
+            "w": 320,
+            "h": 320
+          },
+          "index": 3,
+          "sequence": "tail_wag"
+        },
+        {
+          "frame": {
+            "x": 1280,
+            "y": 320,
+            "w": 320,
+            "h": 320
+          },
+          "index": 4,
+          "sequence": "tail_wag"
+        },
+        {
+          "frame": {
+            "x": 1600,
+            "y": 320,
+            "w": 320,
+            "h": 320
+          },
+          "index": 5,
+          "sequence": "tail_wag"
+        },
+        {
+          "frame": {
+            "x": 1920,
+            "y": 320,
+            "w": 320,
+            "h": 320
+          },
+          "index": 6,
+          "sequence": "tail_wag"
+        },
+        {
+          "frame": {
+            "x": 2240,
+            "y": 320,
+            "w": 320,
+            "h": 320
+          },
+          "index": 7,
+          "sequence": "tail_wag"
+        }
+      ]
+    },
+    "blinking": {
+      "title": "Blinking",
+      "description": "Natural eye blink cycle with eyelid squash and subtle head relaxation",
+      "frame_count": 4,
+      "default_fps": 6,
+      "loop": true,
+      "files": [
+        "frames/blinking/blinking_0.png",
+        "frames/blinking/blinking_1.png",
+        "frames/blinking/blinking_2.png",
+        "frames/blinking/blinking_3.png"
+      ],
+      "spritesheet": "spritesheets/blinking_sheet.png",
+      "frame_rects": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 320,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 640,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 960,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        }
+      ],
+      "master_rects": [
+        {
+          "frame": {
+            "x": 0,
+            "y": 640,
+            "w": 320,
+            "h": 320
+          },
+          "index": 0,
+          "sequence": "blinking"
+        },
+        {
+          "frame": {
+            "x": 320,
+            "y": 640,
+            "w": 320,
+            "h": 320
+          },
+          "index": 1,
+          "sequence": "blinking"
+        },
+        {
+          "frame": {
+            "x": 640,
+            "y": 640,
+            "w": 320,
+            "h": 320
+          },
+          "index": 2,
+          "sequence": "blinking"
+        },
+        {
+          "frame": {
+            "x": 960,
+            "y": 640,
+            "w": 320,
+            "h": 320
+          },
+          "index": 3,
+          "sequence": "blinking"
+        }
+      ]
+    },
+    "jumping": {
+      "title": "Jumping",
+      "description": "Full Disney-style cartoon jump cycle with anticipation crouch, squash and stretch, airborne apex, and impact compression",
+      "frame_count": 8,
+      "default_fps": 10,
+      "loop": true,
+      "files": [
+        "frames/jumping/jumping_0.png",
+        "frames/jumping/jumping_1.png",
+        "frames/jumping/jumping_2.png",
+        "frames/jumping/jumping_3.png",
+        "frames/jumping/jumping_4.png",
+        "frames/jumping/jumping_5.png",
+        "frames/jumping/jumping_6.png",
+        "frames/jumping/jumping_7.png"
+      ],
+      "spritesheet": "spritesheets/jumping_sheet.png",
+      "frame_rects": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 320,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 640,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 960,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 1280,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 1600,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 1920,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 2240,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        }
+      ],
+      "master_rects": [
+        {
+          "frame": {
+            "x": 0,
+            "y": 960,
+            "w": 320,
+            "h": 320
+          },
+          "index": 0,
+          "sequence": "jumping"
+        },
+        {
+          "frame": {
+            "x": 320,
+            "y": 960,
+            "w": 320,
+            "h": 320
+          },
+          "index": 1,
+          "sequence": "jumping"
+        },
+        {
+          "frame": {
+            "x": 640,
+            "y": 960,
+            "w": 320,
+            "h": 320
+          },
+          "index": 2,
+          "sequence": "jumping"
+        },
+        {
+          "frame": {
+            "x": 960,
+            "y": 960,
+            "w": 320,
+            "h": 320
+          },
+          "index": 3,
+          "sequence": "jumping"
+        },
+        {
+          "frame": {
+            "x": 1280,
+            "y": 960,
+            "w": 320,
+            "h": 320
+          },
+          "index": 4,
+          "sequence": "jumping"
+        },
+        {
+          "frame": {
+            "x": 1600,
+            "y": 960,
+            "w": 320,
+            "h": 320
+          },
+          "index": 5,
+          "sequence": "jumping"
+        },
+        {
+          "frame": {
+            "x": 1920,
+            "y": 960,
+            "w": 320,
+            "h": 320
+          },
+          "index": 6,
+          "sequence": "jumping"
+        },
+        {
+          "frame": {
+            "x": 2240,
+            "y": 960,
+            "w": 320,
+            "h": 320
+          },
+          "index": 7,
+          "sequence": "jumping"
+        }
+      ]
+    },
+    "happy": {
+      "title": "Happy Expression",
+      "description": "Joyful reaction with smiling panting tongue, cute squinting eyes, rosy blush, and sparkling stars",
+      "frame_count": 6,
+      "default_fps": 8,
+      "loop": true,
+      "files": [
+        "frames/happy/happy_0.png",
+        "frames/happy/happy_1.png",
+        "frames/happy/happy_2.png",
+        "frames/happy/happy_3.png",
+        "frames/happy/happy_4.png",
+        "frames/happy/happy_5.png"
+      ],
+      "spritesheet": "spritesheets/happy_sheet.png",
+      "frame_rects": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 320,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 640,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 960,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 1280,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        },
+        {
+          "x": 1600,
+          "y": 0,
+          "w": 320,
+          "h": 320
+        }
+      ],
+      "master_rects": [
+        {
+          "frame": {
+            "x": 0,
+            "y": 1280,
+            "w": 320,
+            "h": 320
+          },
+          "index": 0,
+          "sequence": "happy"
+        },
+        {
+          "frame": {
+            "x": 320,
+            "y": 1280,
+            "w": 320,
+            "h": 320
+          },
+          "index": 1,
+          "sequence": "happy"
+        },
+        {
+          "frame": {
+            "x": 640,
+            "y": 1280,
+            "w": 320,
+            "h": 320
+          },
+          "index": 2,
+          "sequence": "happy"
+        },
+        {
+          "frame": {
+            "x": 960,
+            "y": 1280,
+            "w": 320,
+            "h": 320
+          },
+          "index": 3,
+          "sequence": "happy"
+        },
+        {
+          "frame": {
+            "x": 1280,
+            "y": 1280,
+            "w": 320,
+            "h": 320
+          },
+          "index": 4,
+          "sequence": "happy"
+        },
+        {
+          "frame": {
+            "x": 1600,
+            "y": 1280,
+            "w": 320,
+            "h": 320
+          },
+          "index": 5,
+          "sequence": "happy"
+        }
+      ]
+    }
+  },
+  "master_spritesheet": {
+    "file": "spritesheet.png",
+    "columns": 8,
+    "rows": 5,
+    "width": 2560,
+    "height": 1600
+  }
+}

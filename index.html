@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buddy - 2D Animated Cartoon Dog Overlay</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Navigation Header -->
+    <header class="header">
+      <div class="brand">
+        <div class="brand-avatar">🐶</div>
+        <div>
+          <h1 class="brand-title">Buddy — 2D Desktop Overlay Pet</h1>
+          <p class="brand-sub">Consistent 2D Cartoon Character Animation &amp; Sprite Sheet Atlas</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge"><span class="badge-dot"></span> 320 &times; 320 px</span>
+        <span class="badge">RGBA Transparent</span>
+        <span class="badge">34 Total Frames</span>
+        <span class="badge badge-accent">5 Sequences</span>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="player">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Animation Player
+      </button>
+      <button class="nav-tab" data-tab="spritesheet">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+        Sprite Sheet Atlas
+      </button>
+      <button class="nav-tab" data-tab="overlay">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Desktop Overlay Simulator
+      </button>
+      <button class="nav-tab" data-tab="specs">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Specs &amp; Code Export
+      </button>
+      <a href="obs_overlay.html" target="_blank" class="nav-tab" style="text-decoration: none; color: #f59e0b; border-color: rgba(245, 158, 11, 0.4);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        OBS Overlay
+      </a>
+      <a href="obs_dock.html" target="_blank" class="nav-tab" style="text-decoration: none; color: #10b981; border-color: rgba(16, 185, 129, 0.4);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        OBS Control Dock
+      </a>
+    </nav>
+
+    <!-- TAB 1: ANIMATION PLAYER -->
+    <main class="tab-content active" id="tab-player">
+      <div class="player-layout">
+        <!-- Left: Canvas Viewport & Controls -->
+        <section class="viewport-section">
+          <div class="viewport-toolbar">
+            <div class="toolbar-group">
+              <span class="toolbar-label">Background:</span>
+              <button class="tool-btn active" data-bg="grid-dark" title="Dark Transparency Checkerboard">Dark Grid</button>
+              <button class="tool-btn" data-bg="grid-light" title="Light Transparency Checkerboard">Light Grid</button>
+              <button class="tool-btn" data-bg="black" title="Solid Black">Black</button>
+              <button class="tool-btn" data-bg="white" title="Solid White">White</button>
+              <button class="tool-btn" data-bg="chroma" title="Green Screen">Chroma</button>
+              <button class="tool-btn" data-bg="desktop" title="Desktop Wallpaper">Desktop</button>
+            </div>
+            <div class="toolbar-group">
+              <button class="tool-btn" id="btn-toggle-guides" title="Toggle Alignment Crosshair & Ground Line">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                Guides
+              </button>
+              <button class="tool-btn" id="btn-toggle-onion" title="Toggle Onion Skinning (Ghost Previous Frame)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="3 3"/><circle cx="12" cy="12" r="4"/></svg>
+                Onion Skin
+              </button>
+              <div class="zoom-controls">
+                <button class="tool-btn btn-sm" id="btn-zoom-out">-</button>
+                <span id="zoom-text">100%</span>
+                <button class="tool-btn btn-sm" id="btn-zoom-in">+</button>
+                <button class="tool-btn btn-sm" id="btn-zoom-reset">1:1</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Canvas Display Stage -->
+          <div class="canvas-stage grid-dark" id="stage-container">
+            <div class="canvas-wrapper" id="canvas-wrapper">
+              <canvas id="main-canvas" width="320" height="320"></canvas>
+              <canvas id="guides-canvas" width="320" height="320"></canvas>
+            </div>
+            <div class="stage-overlay-info">
+              <span id="live-anim-name">Idle Breathing</span> &bull; 
+              <span id="live-frame-indicator">Frame 1 / 8</span> &bull; 
+              <span id="live-fps-indicator">8 FPS</span>
+            </div>
+          </div>
+
+          <!-- Playback Controls Bar -->
+          <div class="playback-controls">
+            <!-- Timeline Scrubber -->
+            <div class="scrubber-bar">
+              <div class="scrubber-track" id="scrubber-track">
+                <div class="scrubber-progress" id="scrubber-progress"></div>
+                <div class="scrubber-ticks" id="scrubber-ticks"></div>
+                <div class="scrubber-thumb" id="scrubber-thumb"></div>
+              </div>
+            </div>
+
+            <!-- Transport Buttons & FPS -->
+            <div class="transport-bar">
+              <div class="transport-buttons">
+                <button class="trans-btn" id="btn-prev" title="Previous Frame (Left Arrow)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                </button>
+                <button class="trans-btn btn-play" id="btn-play-pause" title="Play/Pause (Spacebar)">
+                  <svg id="play-icon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </button>
+                <button class="trans-btn" id="btn-next" title="Next Frame (Right Arrow)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                </button>
+                <button class="trans-btn active" id="btn-loop" title="Toggle Looping">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                </button>
+              </div>
+
+              <!-- FPS Slider and Presets -->
+              <div class="fps-section">
+                <div class="fps-header">
+                  <span class="fps-title">Speed / FPS:</span>
+                  <span class="fps-value" id="fps-display">8 FPS</span>
+                  <span class="fps-ms" id="fps-ms">(125 ms/frame)</span>
+                </div>
+                <div class="fps-slider-row">
+                  <input type="range" id="fps-slider" min="1" max="30" value="8" step="1">
+                  <div class="fps-presets">
+                    <button class="fps-preset-btn" data-fps="4">4</button>
+                    <button class="fps-preset-btn active" data-fps="8">8</button>
+                    <button class="fps-preset-btn" data-fps="12">12</button>
+                    <button class="fps-preset-btn" data-fps="16">16</button>
+                    <button class="fps-preset-btn" data-fps="24">24</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filmstrip Sequence Frames -->
+          <div class="filmstrip-container">
+            <div class="filmstrip-header">
+              <span class="filmstrip-title">Sequence Filmstrip (Individual Frames)</span>
+              <span class="filmstrip-hint">Click any frame to inspect</span>
+            </div>
+            <div class="filmstrip-track" id="filmstrip-track">
+              <!-- Dynamically populated with frame thumbnails -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Right: Sequence Selector & Interactive Pet -->
+        <aside class="sidebar-section">
+          <!-- Animation Sequences Selector -->
+          <div class="card">
+            <h2 class="card-title">Animation Sequences</h2>
+            <div class="sequence-list" id="sequence-list">
+              <!-- Dynamically populated sequence buttons -->
+            </div>
+          </div>
+
+          <!-- Interactive Petting Mode Card -->
+          <div class="card pet-card">
+            <div class="pet-header">
+              <span class="pet-icon">🐾</span>
+              <div>
+                <h3 class="card-title">Desktop Pet Mode</h3>
+                <p class="pet-sub">Interact directly with Buddy!</p>
+              </div>
+            </div>
+            <p class="pet-desc">Try clicking or petting Buddy to trigger happy reactions, jumping, or alert tail wagging in real-time.</p>
+            <div class="pet-actions">
+              <button class="action-btn" id="action-pet">
+                <span>💕</span> Pet Buddy (Happy)
+              </button>
+              <button class="action-btn" id="action-jump">
+                <span>🚀</span> Jump! (Bouncy)
+              </button>
+              <button class="action-btn" id="action-wag">
+                <span>🐕</span> Wag Tail (Excited)
+              </button>
+            </div>
+          </div>
+
+          <!-- Character Specs Card -->
+          <div class="card specs-mini-card">
+            <h3 class="card-title">Character Design Specs</h3>
+            <ul class="specs-list">
+              <li><strong>Dimensions:</strong> 320 &times; 320 px (Per Frame)</li>
+              <li><strong>Background:</strong> 100% Alpha Transparent (RGBA)</li>
+              <li><strong>Outlines:</strong> 4.5px Crisp Charcoal (#261812)</li>
+              <li><strong>Color Palette:</strong> Amber Gold, Caramel, Cream, Crimson</li>
+              <li><strong>Alignment:</strong> Fixed Y=265 Ground Contact Anchor</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <!-- TAB 2: SPRITE SHEET ATLAS -->
+    <section class="tab-content" id="tab-spritesheet">
+      <div class="spritesheet-container">
+        <div class="spritesheet-header">
+          <div>
+            <h2 class="sheet-title">Combined Master Sprite Sheet Atlas</h2>
+            <p class="sheet-desc">Dimensions: <strong>2560 &times; 1600 px</strong> &bull; 8 Columns &times; 5 Rows &bull; 34 Total Frames</p>
+          </div>
+          <div class="sheet-actions">
+            <a href="spritesheet.png" download="buddy_dog_spritesheet.png" class="btn btn-primary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Master Sprite Sheet
+            </a>
+            <a href="spritesheet.json" download="buddy_dog_spritesheet.json" class="btn btn-secondary">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Download JSON Atlas
+            </a>
+          </div>
+        </div>
+
+        <div class="sheet-viewport-wrapper">
+          <div class="sheet-legend">
+            <span class="legend-item"><span class="legend-color row-idle"></span> Row 0: Idle Breathing (8 frames)</span>
+            <span class="legend-item"><span class="legend-color row-wag"></span> Row 1: Tail Wagging (8 frames)</span>
+            <span class="legend-item"><span class="legend-color row-blink"></span> Row 2: Blinking (4 frames)</span>
+            <span class="legend-item"><span class="legend-color row-jump"></span> Row 3: Jumping (8 frames)</span>
+            <span class="legend-item"><span class="legend-color row-happy"></span> Row 4: Happy Expression (6 frames)</span>
+          </div>
+          <div class="sheet-canvas-container grid-dark">
+            <img src="spritesheet.png" alt="Buddy Master Sprite Sheet" class="sheet-preview-img" id="sheet-img">
+            <div class="sheet-highlight-box" id="sheet-highlight"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: DESKTOP OVERLAY SIMULATOR -->
+    <section class="tab-content" id="tab-overlay">
+      <div class="overlay-simulator">
+        <div class="sim-header">
+          <div>
+            <h2>Desktop Overlay Live Simulation</h2>
+            <p>Drag Buddy anywhere on the desktop! Click Buddy to make him jump, double click to pet him, or choose behavior.</p>
+          </div>
+          <div class="sim-controls">
+            <label>Scale: </label>
+            <select id="sim-scale-select" class="select-input">
+              <option value="0.5">50% (160x160 px)</option>
+              <option value="0.75" selected>75% (240x240 px - Desktop Size)</option>
+              <option value="1.0">100% (320x320 px - Crisp 2K)</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" id="btn-reset-pet-pos">Reset Position</button>
+          </div>
+        </div>
+
+        <!-- Simulated OS Desktop -->
+        <div class="desktop-screen" id="desktop-screen">
+          <!-- Desktop Mockup Icons -->
+          <div class="desktop-icons">
+            <div class="desk-icon"><div class="icon-box">📁</div><span>My Documents</span></div>
+            <div class="desk-icon"><div class="icon-box">🎨</div><span>Art Assets</span></div>
+            <div class="desk-icon"><div class="icon-box">🎮</div><span>Games</span></div>
+            <div class="desk-icon"><div class="icon-box">🗑️</div><span>Recycle Bin</span></div>
+          </div>
+
+          <!-- Mock Open Window -->
+          <div class="mock-window">
+            <div class="window-titlebar">
+              <span class="win-title">Code Editor - main.dart</span>
+              <div class="win-btns">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+            <div class="window-body">
+              <pre><code>// Desktop Pet Overlay Widget
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const DesktopPetOverlay(
+    character: 'Buddy',
+    initialState: PetState.idle,
+  ));
+}</code></pre>
+            </div>
+          </div>
+
+          <!-- Draggable Desktop Pet Element -->
+          <div class="draggable-pet" id="draggable-pet" style="left: 65%; top: 48%;">
+            <canvas id="pet-overlay-canvas" width="320" height="320"></canvas>
+            <div class="pet-speech-bubble" id="pet-bubble">Woof! ❤️</div>
+          </div>
+
+          <!-- Simulated Windows/Mac Taskbar -->
+          <div class="desktop-taskbar">
+            <div class="taskbar-start">🪟 Start</div>
+            <div class="taskbar-apps">
+              <span class="tb-app active">🐕 Buddy Desktop Pet (Running)</span>
+              <span class="tb-app">💻 Terminal</span>
+            </div>
+            <div class="taskbar-tray">
+              <span>🔊 100%</span>
+              <span>📶 Online</span>
+              <span id="taskbar-clock">10:00 AM</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: SPECS & CODE EXPORT -->
+    <section class="tab-content" id="tab-specs">
+      <div class="specs-grid">
+        <div class="card">
+          <h2 class="card-title">Animation Sequences Manifest</h2>
+          <div class="table-responsive">
+            <table class="specs-table">
+              <thead>
+                <tr>
+                  <th>Sequence</th>
+                  <th>Frames</th>
+                  <th>Default FPS</th>
+                  <th>Duration</th>
+                  <th>Characteristics</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Idle Breathing</strong></td>
+                  <td>8 frames</td>
+                  <td>8 FPS</td>
+                  <td>1.0 s</td>
+                  <td>Continuous loop; sine wave chest expansion, subtle head bob, relaxed tail sway</td>
+                </tr>
+                <tr>
+                  <td><strong>Tail Wagging</strong></td>
+                  <td>8 frames</td>
+                  <td>12 FPS</td>
+                  <td>0.67 s</td>
+                  <td>Sinusoidal &plusmn;28&deg; wag arc, alternating hip balance, alert ears</td>
+                </tr>
+                <tr>
+                  <td><strong>Blinking</strong></td>
+                  <td>4 frames</td>
+                  <td>6 FPS</td>
+                  <td>0.67 s</td>
+                  <td>Open &rarr; Half &rarr; Closed &rarr; Half; natural eyelid squash</td>
+                </tr>
+                <tr>
+                  <td><strong>Jumping</strong></td>
+                  <td>8 frames</td>
+                  <td>10 FPS</td>
+                  <td>0.80 s</td>
+                  <td>Anticipation crouch, takeoff, 50px peak height, tucked paws, impact squash &amp; rebound</td>
+                </tr>
+                <tr>
+                  <td><strong>Happy Expression</strong></td>
+                  <td>6 frames</td>
+                  <td>8 FPS</td>
+                  <td>0.75 s</td>
+                  <td>Squinting happy eyes, mouth opens, panting tongue, glowing blush, golden star sparkles</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">Integration Code Snippets</h2>
+          <div class="code-tabs">
+            <button class="code-tab active" data-code="html">HTML5 Canvas</button>
+            <button class="code-tab" data-code="css">CSS Sprites</button>
+            <button class="code-tab" data-code="flutter">Flutter Desktop</button>
+            <button class="code-tab" data-code="electron">Electron Overlay</button>
+          </div>
+          <div class="code-box">
+            <pre><code id="code-display">// Loading...</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
