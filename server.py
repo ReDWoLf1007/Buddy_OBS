@@ -3,7 +3,9 @@ import sys
 import json
 import urllib.parse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+from socketserver import ThreadingMixIn
 import threading
+import time
 
 PORT = 8000
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
@@ -27,14 +29,33 @@ def broadcast_alert(alert_data):
             if client in sse_clients:
                 sse_clients.remove(client)
 
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Multi-threaded HTTP server allowing parallel requests and non-blocking SSE."""
+    daemon_threads = True
+    allow_reuse_address = True
+
+    def handle_error(self, request, client_address):
+        """Suppress routine socket disconnects when browser tabs close or refresh."""
+        exc_type, exc_val, _ = sys.exc_info()
+        if exc_type in (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            return
+        if isinstance(exc_val, OSError) and getattr(exc_val, 'winerror', None) in (10053, 10054, 10038):
+            return
+        super().handle_error(request, client_address)
+
 class PetStreamHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=DIRECTORY, **kwargs)
 
+    def log_message(self, format, *args):
+        # Concise logging
+        sys.stdout.write(f"[{time.strftime('%H:%M:%S')}] {args[0]} {args[1]}\n")
+        sys.stdout.flush()
+
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
 
-        # 1. Server-Sent Events Endpoint: /events
+        # 1. Server-Sent Events Endpoint: /events (runs on its own thread)
         if parsed.path == '/events':
             self.send_response(200)
             self.send_header('Content-Type', 'text/event-stream')
@@ -42,8 +63,7 @@ class PetStreamHandler(SimpleHTTPRequestHandler):
             self.send_header('Connection', 'keep-alive')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            
-            # Send initial ping
+
             try:
                 self.wfile.write(b": connected\n\n")
                 self.wfile.flush()
@@ -53,13 +73,15 @@ class PetStreamHandler(SimpleHTTPRequestHandler):
             with clients_lock:
                 sse_clients.append(self)
 
-            # Keep connection open
+            # Keep client thread alive with periodic keep-alive pings
             try:
                 while True:
-                    threading.Event().wait(30)
+                    time.sleep(25)
                     self.wfile.write(b": ping\n\n")
                     self.wfile.flush()
             except Exception:
+                pass
+            finally:
                 with clients_lock:
                     if self in sse_clients:
                         sse_clients.remove(self)
@@ -122,16 +144,22 @@ class PetStreamHandler(SimpleHTTPRequestHandler):
         super().do_POST()
 
 def run_server():
-    server = HTTPServer(('0.0.0.0', PORT), PetStreamHandler)
+    try:
+        server = ThreadedHTTPServer(('0.0.0.0', PORT), PetStreamHandler)
+    except OSError as e:
+        print(f"❌ Error starting server on port {PORT}: {e}")
+        print("Tip: Port 8000 might already be in use by another running window or program.")
+        return
+
     print(f"=====================================================")
-    print(f"🐾 Buddy Desktop Pet - Stream & Overlay Server Ready")
+    print(f"🐾 Buddy Desktop Pet - Multi-Threaded Server Online")
     print(f"=====================================================")
-    print(f"• Overlay URL for OBS:   http://localhost:{PORT}/obs_overlay.html")
-    print(f"• Control Dock for OBS:  http://localhost:{PORT}/obs_dock.html")
-    print(f"• Interactive Preview:   http://localhost:{PORT}/index.html")
-    print(f"• Webhook Endpoint:      http://localhost:{PORT}/api/alert?name=Test&platform=youtube")
+    print(f"• Interactive Web App:   http://localhost:{PORT}/index.html")
+    print(f"• OBS Overlay:           http://localhost:{PORT}/obs_overlay.html")
+    print(f"• OBS Control Dock:      http://localhost:{PORT}/obs_dock.html")
+    print(f"• Webhook Trigger:       http://localhost:{PORT}/api/alert?name=Test&platform=youtube")
     print(f"=====================================================")
-    print(f"Listening on port {PORT}... Press Ctrl+C to stop.")
+    print(f"Server is listening. Press Ctrl+C in this terminal to stop.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Buddy - OBS Stream Overlay</title>
+  <script src="socket.io.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -42,7 +43,16 @@
       pointer-events: none;
     }
 
-    /* Thought Bubble Container - Anchored right above Buddy's head */
+    /* Clean Canvas for Character Animation */
+    #pet-canvas {
+      width: 320px;
+      height: 320px;
+      display: block;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+
+    /* --- THOUGHT BUBBLE (ANCHORED ABOVE BUDDY'S HEAD) --- */
     #thought-bubble {
       position: absolute;
       bottom: 275px;
@@ -135,17 +145,20 @@
     .bubble-subname {
       color: #d97706;
       font-weight: 900;
-      text-decoration: underline wavy #f59e0b;
+      background: rgba(245, 158, 11, 0.12);
+      padding: 2px 7px;
+      border-radius: 6px;
+      display: inline-block;
     }
 
     .bubble-card.platform-youtube .bubble-subname {
       color: #dc2626;
-      text-decoration-color: #ef4444;
+      background: rgba(239, 68, 68, 0.12);
     }
 
     .bubble-card.platform-twitch .bubble-subname {
       color: #7e22ce;
-      text-decoration-color: #a855f7;
+      background: rgba(147, 51, 234, 0.12);
     }
 
     .bubble-footer {
@@ -204,18 +217,6 @@
       left: 54%;
     }
 
-    /* Canvas Character */
-    #pet-canvas {
-      width: 320px;
-      height: 320px;
-      max-width: 100%;
-      max-height: 100%;
-      display: block;
-      image-rendering: auto;
-      z-index: 10;
-      filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.42));
-    }
-
     /* Sparkle Particle FX */
     .sparkle-particle {
       position: absolute;
@@ -240,7 +241,7 @@
 
   <div id="stage">
     <div id="pet-container">
-      <!-- Thought Bubble (anchored above head) -->
+      <!-- Thought Bubble (anchored above Buddy's head) -->
       <div id="thought-bubble">
         <div class="bubble-card" id="bubble-card">
           <div class="bubble-badge" id="bubble-badge">✨ NEW SUBSCRIBER ✨</div>
@@ -256,44 +257,104 @@
         </div>
       </div>
 
-      <!-- Canvas Animation -->
+      <!-- Buddy Character Canvas (Exact app.js proven engine) -->
       <canvas id="pet-canvas" width="320" height="320"></canvas>
     </div>
   </div>
 
   <script>
-    // --- SPRITE DATA & SEQUENCES ---
-    const SPRITE_CONFIG = {
-      image_src: 'spritesheet.png',
-      frame_size: 320,
-      sequences: {
-        idle: { row: 0, count: 8, fps: 8, loop: true },
-        tail_wag: { row: 1, count: 8, fps: 12, loop: true },
-        blinking: { row: 2, count: 4, fps: 6, loop: false },
-        jumping: { row: 3, count: 8, fps: 10, loop: false },
-        happy: { row: 4, count: 6, fps: 8, loop: true }
+    // --- ANIMATION SEQUENCE FRAME MANIFEST ---
+    const MANIFEST = {
+      idle: {
+        fps: 8,
+        loop: true,
+        files: [
+          "frames/idle/idle_0.png",
+          "frames/idle/idle_1.png",
+          "frames/idle/idle_2.png",
+          "frames/idle/idle_3.png",
+          "frames/idle/idle_4.png",
+          "frames/idle/idle_5.png",
+          "frames/idle/idle_6.png",
+          "frames/idle/idle_7.png"
+        ]
+      },
+      tail_wag: {
+        fps: 12,
+        loop: true,
+        files: [
+          "frames/tail_wag/tail_wag_0.png",
+          "frames/tail_wag/tail_wag_1.png",
+          "frames/tail_wag/tail_wag_2.png",
+          "frames/tail_wag/tail_wag_3.png",
+          "frames/tail_wag/tail_wag_4.png",
+          "frames/tail_wag/tail_wag_5.png",
+          "frames/tail_wag/tail_wag_6.png",
+          "frames/tail_wag/tail_wag_7.png"
+        ]
+      },
+      blinking: {
+        fps: 6,
+        loop: false,
+        files: [
+          "frames/blinking/blinking_0.png",
+          "frames/blinking/blinking_1.png",
+          "frames/blinking/blinking_2.png",
+          "frames/blinking/blinking_3.png"
+        ]
+      },
+      jumping: {
+        fps: 10,
+        loop: false,
+        files: [
+          "frames/jumping/jumping_0.png",
+          "frames/jumping/jumping_1.png",
+          "frames/jumping/jumping_2.png",
+          "frames/jumping/jumping_3.png",
+          "frames/jumping/jumping_4.png",
+          "frames/jumping/jumping_5.png",
+          "frames/jumping/jumping_6.png",
+          "frames/jumping/jumping_7.png"
+        ]
+      },
+      happy: {
+        fps: 8,
+        loop: true,
+        files: [
+          "frames/happy/happy_0.png",
+          "frames/happy/happy_1.png",
+          "frames/happy/happy_2.png",
+          "frames/happy/happy_3.png",
+          "frames/happy/happy_4.png",
+          "frames/happy/happy_5.png"
+        ]
       }
     };
 
     // --- STATE VARIABLES ---
-    let currentSequence = 'idle';
+    let currentSeq = 'idle';
     let currentFrame = 0;
     let sequenceLoopCount = 0;
     let targetLoopCount = 1;
+    let isLooping = true;
+    let fps = 8;
     let lastFrameTime = 0;
-    let isSpriteLoaded = false;
-    let useFallbackFrames = false;
-    let fallbackImages = {};
 
-    const spriteImage = new Image();
+    // Image Cache
+    const imageCache = {};
+    let imagesLoaded = 0;
 
     // Overlay Settings
     const settings = {
-      enableTTS: true,
+      soundMode: 'chime', // 'chime' (musical chime only), 'bark', 'voice_female', 'voice_male', 'both', 'mute'
+      enableTTS: false,
       ttsVolume: 0.9,
       ttsRate: 1.05,
-      ttsPitch: 1.25,
+      ttsPitch: 1.2,
+      voiceVariant: 'female',
+      voiceName: '',
       enableSound: true,
+      soundVolume: 0.8,
       bubbleDuration: 5500,
       randomFrequency: 'normal',
       streamlabsToken: '',
@@ -316,15 +377,170 @@
     const bubbleSubname = document.getElementById('bubble-subname');
     const bubbleFooter = document.getElementById('bubble-footer');
 
+    // --- PRELOAD ALL FRAMES (SAME EXACT ENGINE AS APP.JS) ---
+    function preloadAllFrames() {
+      for (const [seqKey, seq] of Object.entries(MANIFEST)) {
+        imageCache[seqKey] = [];
+        seq.files.forEach((filePath) => {
+          const img = new Image();
+          img.src = filePath;
+          img.onload = () => {
+            imagesLoaded++;
+            if (imagesLoaded === 1) {
+              drawFrame();
+            }
+          };
+          imageCache[seqKey].push(img);
+        });
+      }
+    }
+
+    // --- DRAW CURRENT FRAME ---
+    function drawFrame() {
+      const frames = imageCache[currentSeq];
+      if (!frames || !frames[currentFrame]) return;
+      const img = frames[currentFrame];
+      if (img && img.complete) {
+        ctx.clearRect(0, 0, 320, 320);
+        ctx.drawImage(img, 0, 0, 320, 320);
+      }
+    }
+
+    // --- STEP TO NEXT FRAME ---
+    function stepFrame() {
+      const seq = MANIFEST[currentSeq];
+      if (!seq) return;
+      const total = seq.files.length;
+
+      if (currentFrame + 1 < total) {
+        currentFrame++;
+      } else if (isLooping) {
+        currentFrame = 0;
+        sequenceLoopCount++;
+        if (!isProcessingAlert && currentSeq !== 'idle') {
+          if (sequenceLoopCount >= targetLoopCount) {
+            setSequence('idle');
+            return;
+          }
+        }
+      } else {
+        // Non-looping animation finished (jump or blink)
+        if (!isProcessingAlert) {
+          setSequence('idle');
+          return;
+        }
+      }
+
+      drawFrame();
+    }
+
+    // --- ANIMATION CONTROLLER ---
+    function setSequence(seqKey, loops = 1) {
+      if (!MANIFEST[seqKey]) return;
+      currentSeq = seqKey;
+      currentFrame = 0;
+      sequenceLoopCount = 0;
+      targetLoopCount = loops;
+      const seq = MANIFEST[seqKey];
+      fps = seq.fps;
+      isLooping = seq.loop;
+      lastFrameTime = performance.now();
+      drawFrame();
+    }
+
+    // --- ROCK-SOLID DUAL TIMING LOOP (rAF + WATCHDOG) ---
+    function startAnimationLoop() {
+      const loop = (timestamp) => {
+        const now = timestamp || performance.now();
+        if (!lastFrameTime) lastFrameTime = now;
+        const interval = 1000 / fps;
+        const elapsed = now - lastFrameTime;
+
+        if (elapsed >= interval) {
+          stepFrame();
+          lastFrameTime = now - (elapsed % interval);
+        }
+
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+
+      // Watchdog interval: Guarantees Buddy NEVER freezes even if OBS CEF throttles rAF
+      setInterval(() => {
+        const now = performance.now();
+        const interval = 1000 / fps;
+        if (now - lastFrameTime >= interval * 1.5) {
+          stepFrame();
+          lastFrameTime = now;
+        }
+      }, 100);
+    }
+
+    // --- RANDOM NATURAL REACTION ENGINE ---
+    let randomTimer = null;
+    function scheduleNextRandomAnimation() {
+      if (settings.randomFrequency === 'off') return;
+
+      let minDelay = 4000;
+      let maxDelay = 8500;
+      if (settings.randomFrequency === 'calm') {
+        minDelay = 7000;
+        maxDelay = 15000;
+      } else if (settings.randomFrequency === 'hyper') {
+        minDelay = 2500;
+        maxDelay = 5500;
+      }
+
+      const delay = Math.random() * (maxDelay - minDelay) + minDelay;
+
+      clearTimeout(randomTimer);
+      randomTimer = setTimeout(() => {
+        if (!isProcessingAlert && currentSeq === 'idle') {
+          triggerRandomReaction();
+        }
+        scheduleNextRandomAnimation();
+      }, delay);
+    }
+
+    function triggerRandomReaction() {
+      const roll = Math.random();
+      if (roll < 0.45) {
+        // Tail wag for 3 loops
+        setSequence('tail_wag', 3);
+      } else if (roll < 0.70) {
+        // Blink 1 cycle
+        setSequence('blinking', 1);
+      } else if (roll < 0.88) {
+        // Playful Jump 1 cycle
+        setSequence('jumping', 1);
+      } else {
+        // Happy pant for 2 loops
+        setSequence('happy', 2);
+      }
+    }
+
     // --- AUDIO & TTS SYNTHESIZER ---
     let audioCtx = null;
+    let systemVoices = [];
+
+    function updateVoiceList() {
+      if ('speechSynthesis' in window) {
+        systemVoices = window.speechSynthesis.getVoices() || [];
+      }
+    }
+    if ('speechSynthesis' in window) {
+      updateVoiceList();
+      window.speechSynthesis.onvoiceschanged = updateVoiceList;
+    }
+
     function playHappyChime() {
-      if (!settings.enableSound) return;
+      if (!settings.enableSound || settings.soundMode === 'mute') return;
       try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!audioCtx) audioCtx = new AudioContext();
         if (audioCtx.state === 'suspended') audioCtx.resume();
 
+        const chimeVol = typeof settings.soundVolume === 'number' ? settings.soundVolume : 0.8;
         const now = audioCtx.currentTime;
         const notes = [659.25, 830.61, 987.77, 1318.51];
         notes.forEach((freq, idx) => {
@@ -334,7 +550,7 @@
           osc.frequency.setValueAtTime(freq, now + idx * 0.1);
 
           gain.gain.setValueAtTime(0, now + idx * 0.1);
-          gain.gain.linearRampToValueAtTime(0.25, now + idx * 0.1 + 0.02);
+          gain.gain.linearRampToValueAtTime(0.25 * chimeVol, now + idx * 0.1 + 0.02);
           gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.35);
 
           osc.connect(gain);
@@ -346,18 +562,116 @@
       } catch (err) {}
     }
 
+    function playDogBark() {
+      if (!settings.enableSound || settings.soundMode === 'mute') return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const now = audioCtx.currentTime;
+        const chimeVol = typeof settings.soundVolume === 'number' ? settings.soundVolume : 0.8;
+
+        // Two quick cute cartoon puppy barks ("Arf-arf!")
+        [0, 0.15].forEach(offset => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          const filter = audioCtx.createBiquadFilter();
+
+          osc.type = 'sawtooth';
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(650, now + offset);
+          filter.Q.setValueAtTime(2.5, now + offset);
+
+          osc.frequency.setValueAtTime(520, now + offset);
+          osc.frequency.exponentialRampToValueAtTime(220, now + offset + 0.11);
+
+          gain.gain.setValueAtTime(0, now + offset);
+          gain.gain.linearRampToValueAtTime(0.28 * chimeVol, now + offset + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.12);
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.13);
+        });
+      } catch (e) {}
+    }
+
+    function playAlertAudio(text) {
+      const mode = settings.soundMode || (settings.enableTTS ? 'both' : (settings.enableSound ? 'chime' : 'mute'));
+      if (mode === 'mute') return;
+
+      if (mode === 'chime') {
+        // Musical Chime ONLY - No robotic speech!
+        playHappyChime();
+      } else if (mode === 'bark') {
+        // Cute playful dog bark + chime
+        playDogBark();
+        setTimeout(playHappyChime, 180);
+      } else if (mode === 'voice_female') {
+        playHappyChime();
+        settings.voiceVariant = 'female';
+        if (text) speakText(text);
+      } else if (mode === 'voice_male') {
+        playHappyChime();
+        settings.voiceVariant = 'male';
+        if (text) speakText(text);
+      } else if (mode === 'both') {
+        playHappyChime();
+        if (text) speakText(text);
+      }
+    }
+
     function speakText(text) {
-      if (!settings.enableTTS || !('speechSynthesis' in window)) return;
+      if (!('speechSynthesis' in window)) return;
       try {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.volume = settings.ttsVolume;
-        utterance.rate = settings.ttsRate;
-        utterance.pitch = settings.ttsPitch;
+        if (!systemVoices || systemVoices.length === 0) {
+          updateVoiceList();
+        }
 
-        const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Zira') || v.name.includes('Samantha')));
-        if (preferredVoice) utterance.voice = preferredVoice;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.volume = typeof settings.ttsVolume === 'number' ? settings.ttsVolume : 0.9;
+
+        const variant = settings.voiceVariant || 'female';
+        let targetPitch = typeof settings.ttsPitch === 'number' ? settings.ttsPitch : 1.15;
+        let targetRate = typeof settings.ttsRate === 'number' ? settings.ttsRate : 1.05;
+
+        if (variant === 'female') {
+          targetPitch = settings.ttsPitch || 1.15;
+          targetRate = settings.ttsRate || 1.05;
+        } else if (variant === 'male') {
+          targetPitch = settings.ttsPitch || 0.95;
+          targetRate = settings.ttsRate || 1.0;
+        }
+
+        utterance.pitch = Math.min(2.0, Math.max(0.5, targetPitch));
+        utterance.rate = Math.min(2.0, Math.max(0.5, targetRate));
+
+        if (systemVoices && systemVoices.length > 0) {
+          let chosenVoice = null;
+          if (settings.voiceName) {
+            chosenVoice = systemVoices.find(v => v.name === settings.voiceName);
+          }
+          if (!chosenVoice) {
+            if (variant === 'female' || variant === 'cartoon' || variant === 'soft') {
+              chosenVoice = systemVoices.find(v => 
+                v.lang.startsWith('en') && /zira|jenny|samantha|hazel|google|natural|aria/i.test(v.name)
+              );
+            } else if (variant === 'male') {
+              chosenVoice = systemVoices.find(v => 
+                v.lang.startsWith('en') && /david|mark|george|guy/i.test(v.name)
+              );
+            }
+          }
+          if (!chosenVoice) {
+            chosenVoice = systemVoices.find(v => v.lang.startsWith('en')) || systemVoices[0];
+          }
+          if (chosenVoice) utterance.voice = chosenVoice;
+        }
 
         window.speechSynthesis.speak(utterance);
       } catch (e) {}
@@ -390,110 +704,40 @@
       }
     }
 
-    // --- DRAW CURRENT FRAME ---
-    function drawCurrentFrame() {
-      if (!isSpriteLoaded) return;
-      const seq = SPRITE_CONFIG.sequences[currentSequence];
-      if (!seq) return;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (useFallbackFrames && fallbackImages[currentSequence]) {
-        const frameImg = fallbackImages[currentSequence][currentFrame];
-        if (frameImg && frameImg.complete) {
-          ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
-        }
-      } else {
-        const sx = currentFrame * SPRITE_CONFIG.frame_size;
-        const sy = seq.row * SPRITE_CONFIG.frame_size;
-        ctx.drawImage(
-          spriteImage,
-          sx, sy, SPRITE_CONFIG.frame_size, SPRITE_CONFIG.frame_size,
-          0, 0, canvas.width, canvas.height
-        );
-      }
-    }
-
-    // --- ANIMATION CONTROLLER ---
-    function setSequence(seqName, loops = 1) {
-      if (!SPRITE_CONFIG.sequences[seqName]) return;
-      currentSequence = seqName;
-      currentFrame = 0;
-      sequenceLoopCount = 0;
-      targetLoopCount = loops;
-      drawCurrentFrame();
-    }
-
-    function animate(now) {
-      requestAnimationFrame(animate);
-      if (!isSpriteLoaded) return;
-
-      const seq = SPRITE_CONFIG.sequences[currentSequence];
-      const frameInterval = 1000 / seq.fps;
-
-      if (!lastFrameTime) lastFrameTime = now;
-      const elapsed = now - lastFrameTime;
-
-      if (elapsed >= frameInterval) {
-        lastFrameTime = now - (elapsed % frameInterval);
-
-        drawCurrentFrame();
-
-        currentFrame++;
-        if (currentFrame >= seq.count) {
-          currentFrame = 0;
-          sequenceLoopCount++;
-
-          if (!isProcessingAlert && currentSequence !== 'idle') {
-            if (sequenceLoopCount >= targetLoopCount) {
-              setSequence('idle');
-            }
-          }
-        }
-      }
-    }
-
-    // --- RANDOM ANIMATION BEHAVIOR ENGINE ---
-    let randomTimer = null;
-    function scheduleNextRandomAnimation() {
-      if (settings.randomFrequency === 'off') return;
-
-      let minDelay = 4000;
-      let maxDelay = 9000;
-      if (settings.randomFrequency === 'calm') {
-        minDelay = 8000;
-        maxDelay = 16000;
-      } else if (settings.randomFrequency === 'hyper') {
-        minDelay = 2500;
-        maxDelay = 6000;
-      }
-
-      const delay = Math.random() * (maxDelay - minDelay) + minDelay;
-
-      clearTimeout(randomTimer);
-      randomTimer = setTimeout(() => {
-        if (!isProcessingAlert && currentSequence === 'idle') {
-          triggerRandomReaction();
-        }
-        scheduleNextRandomAnimation();
-      }, delay);
-    }
-
-    function triggerRandomReaction() {
-      const roll = Math.random();
-      if (roll < 0.45) {
-        setSequence('tail_wag', Math.floor(Math.random() * 3) + 2);
-      } else if (roll < 0.70) {
-        setSequence('blinking', 1);
-      } else if (roll < 0.88) {
-        setSequence('jumping', 1);
-      } else {
-        setSequence('happy', 2);
-      }
-    }
-
     // --- SUBSCRIBER & EVENT ALERT HANDLER ---
+    const seenEventKeys = new Map(); // fingerprint -> timestamp
+
     function triggerSubscriberAlert(eventData) {
+      if (!eventData || !eventData.name) return;
+      const rawName = (eventData.name || '').trim();
+      // Never process phantom alerts where name is empty or literally the placeholder "Subscriber"
+      if (!rawName) return;
+
+      const normName = rawName.toLowerCase();
+      const type = (eventData.tier || eventData.type || 'alert').toLowerCase();
+      const amount = (eventData.amount || '').trim();
+      const msgText = (eventData.message || '').trim();
+
+      // Fingerprint combines Name + Event Type + Amount + Message
+      // If the SAME user does 3 DIFFERENT actions (e.g. Subscribes, then Memberships, then Super Chats),
+      // each action has a different fingerprint and will NOT be blocked!
+      const fingerprint = `${normName}|${type}|${amount}|${msgText}`;
+      const now = Date.now();
+
+      // Guard: Only drop if the EXACT same action from the same user arrives within 3.5 seconds (network echo)
+      if (seenEventKeys.has(fingerprint) && (now - seenEventKeys.get(fingerprint)) < 3500) {
+        console.log('[Alert Ignored - Duplicate Network Echo]', fingerprint);
+        return;
+      }
+      seenEventKeys.set(fingerprint, now);
+
+      // Clean up old entries from the map periodically
+      if (seenEventKeys.size > 100) {
+        for (const [k, t] of seenEventKeys.entries()) {
+          if (now - t > 15000) seenEventKeys.delete(k);
+        }
+      }
+
       alertQueue.push(eventData);
       if (!isProcessingAlert) {
         processNextAlert();
@@ -515,68 +759,111 @@
       const data = alertQueue.shift();
       const subscriberName = data.name || 'Anonymous Fan';
       const platform = (data.platform || 'General').toLowerCase();
-      const tier = data.tier || 'Subscriber';
+      const tierLower = (data.tier || 'Subscriber').toLowerCase();
       const customMsg = data.message || '';
+      const amount = data.amount || '';
 
       bubbleCard.className = 'bubble-card';
       bubbleBadge.className = 'bubble-badge';
 
+      let alertSpeech = `Thank you, ${subscriberName}!`;
+
       if (platform.includes('youtube')) {
         bubbleCard.classList.add('platform-youtube');
         bubbleBadge.classList.add('badge-youtube');
-        if (tier.toLowerCase().includes('member') || tier.toLowerCase().includes('sponsor')) {
+
+        if (tierLower.includes('member') || tierLower.includes('sponsor') || tierLower.includes('membership')) {
           bubbleCard.classList.add('platform-member');
           bubbleBadge.classList.add('badge-member');
           bubbleBadge.textContent = '⭐ YOUTUBE MEMBER!';
-        } else if (tier.toLowerCase().includes('superchat')) {
-          bubbleBadge.textContent = '💰 YOUTUBE SUPER CHAT!';
+          bubbleFooter.textContent = customMsg ? `"${customMsg}"` : 'Welcome to the pack membership! ⭐';
+          alertSpeech = customMsg 
+            ? `Welcome to the pack, new member ${subscriberName}! ${customMsg}` 
+            : `Welcome to the pack, new member ${subscriberName}!`;
+        } else if (tierLower.includes('superchat') || tierLower.includes('super chat') || tierLower.includes('super_chat')) {
+          bubbleBadge.textContent = amount ? `💰 SUPER CHAT (${amount})!` : '💰 YOUTUBE SUPER CHAT!';
+          bubbleFooter.textContent = customMsg ? `"${customMsg}"` : 'Thank you for the Super Chat! 💰';
+          alertSpeech = customMsg 
+            ? `Thank you for the Super Chat, ${subscriberName}! ${customMsg}` 
+            : `Thank you for the Super Chat, ${subscriberName}!`;
         } else {
           bubbleBadge.textContent = '🔴 YOUTUBE SUBSCRIBER!';
+          bubbleFooter.textContent = customMsg || 'Welcome to the pack! 🐾';
+          alertSpeech = `Thank you, ${subscriberName}!`;
         }
       } else if (platform.includes('twitch')) {
         bubbleCard.classList.add('platform-twitch');
         bubbleBadge.classList.add('badge-twitch');
-        bubbleBadge.textContent = '🟣 TWITCH SUBSCRIBER!';
+        if (tierLower.includes('gift')) {
+          bubbleBadge.textContent = '🎁 TWITCH GIFT SUB!';
+          alertSpeech = `Thank you for the gift sub, ${subscriberName}!`;
+        } else if (tierLower.includes('cheer') || tierLower.includes('bits')) {
+          bubbleBadge.textContent = '💎 TWITCH CHEER!';
+          bubbleFooter.textContent = customMsg ? `"${customMsg}"` : 'Thank you for the cheer!';
+          alertSpeech = customMsg 
+            ? `Thank you for the cheer, ${subscriberName}! ${customMsg}` 
+            : `Thank you for the cheer, ${subscriberName}!`;
+        } else if (tierLower.includes('follow')) {
+          bubbleBadge.textContent = '🟣 NEW TWITCH FOLLOWER!';
+          alertSpeech = `Thank you for following, ${subscriberName}!`;
+        } else {
+          bubbleBadge.textContent = '🟣 TWITCH SUBSCRIBER!';
+          alertSpeech = `Thank you for subscribing, ${subscriberName}!`;
+        }
+        if (!tierLower.includes('cheer')) {
+          bubbleFooter.textContent = customMsg || 'Welcome to the pack! 🐾';
+        }
       } else {
-        bubbleBadge.textContent = `✨ NEW ${tier.toUpperCase()}! ✨`;
+        bubbleBadge.textContent = `✨ NEW ${data.tier ? data.tier.toUpperCase() : 'ALERT'}! ✨`;
+        bubbleFooter.textContent = customMsg || 'Welcome to the pack! 🐾';
       }
 
       bubbleSubname.textContent = subscriberName;
-      if (customMsg) {
-        bubbleFooter.textContent = `"${customMsg}"`;
-      } else {
-        bubbleFooter.textContent = 'Welcome to the pack! 🐾';
-      }
 
+      // Step 1: Jump first, then switch to happy loop!
       setSequence('jumping', 1);
       setTimeout(() => {
         if (isProcessingAlert) {
           setSequence('happy', 999);
         }
-      }, 750);
+      }, 800);
 
+      // Step 2: Pop in thought bubble ONCE with chosen audio mode (Chime, Bark, or Voice)
       setTimeout(() => {
         thoughtBubble.classList.add('active');
-        playHappyChime();
         spawnSparkles(20);
-        speakText(`Thank you, ${subscriberName}!`);
+        playAlertAudio(alertSpeech);
       }, 200);
+
+      // Step 3: Bubble duration timer (adapts dynamically so long messages don't get cut off while being read)
+      const wordCount = (customMsg ? customMsg.split(/\s+/).length : 0) + 6;
+      const displayDuration = Math.max(settings.bubbleDuration, wordCount * 450 + 1500);
 
       alertTimer = setTimeout(() => {
         thoughtBubble.classList.remove('active');
         setTimeout(() => {
           processNextAlert();
         }, 500);
-      }, settings.bubbleDuration);
+      }, displayDuration);
     }
 
     // --- MANUAL ACTION HANDLERS ---
-    function manualTriggerAnimation(animName, loops = 1) {
+    function manualTriggerAnimation(animName, loops = 2) {
       if (isProcessingAlert) return;
       setSequence(animName, loops);
     }
 
+    let lastThoughtText = '';
+    let lastThoughtTimestamp = 0;
+
     function manualCustomThought(message, duration = 4000) {
+      const now = Date.now();
+      if (message === lastThoughtText && (now - lastThoughtTimestamp) < 2500) {
+        return; // Guard against duplicate firing
+      }
+      lastThoughtText = message;
+      lastThoughtTimestamp = now;
+
       bubbleCard.className = 'bubble-card';
       bubbleBadge.className = 'bubble-badge';
       bubbleBadge.textContent = '💬 BUDDY SAYS';
@@ -585,7 +872,7 @@
       thoughtBubble.classList.add('active');
       setSequence('happy', 999);
       spawnSparkles(10);
-      playHappyChime();
+      playAlertAudio();
 
       clearTimeout(alertTimer);
       alertTimer = setTimeout(() => {
@@ -594,7 +881,7 @@
       }, duration);
     }
 
-    // --- ASYNC SOCKET.IO & LIVE INTEGRATIONS ---
+    // --- ASYNC SOCKET.IO & LIVE STREAMLABS / TWITCH INTEGRATIONS ---
     function loadSocketIOAsync() {
       if (typeof io !== 'undefined') {
         if (settings.streamlabsToken) connectStreamlabs(settings.streamlabsToken);
@@ -602,56 +889,172 @@
         return;
       }
       const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js';
+      s.src = 'socket.io.js';
       s.async = true;
       s.onload = () => {
         if (settings.streamlabsToken) connectStreamlabs(settings.streamlabsToken);
         if (settings.streamelementsToken) connectStreamElements(settings.streamelementsToken);
       };
+      s.onerror = () => {
+        const cdn = document.createElement('script');
+        cdn.src = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.4.0/socket.io.js';
+        cdn.onload = () => {
+          if (settings.streamlabsToken) connectStreamlabs(settings.streamlabsToken);
+        };
+        document.head.appendChild(cdn);
+      };
       document.head.appendChild(s);
     }
 
     let streamlabsSocket = null;
+    let activeConnectedToken = '';
+
     function connectStreamlabs(token) {
       if (!token || typeof io === 'undefined') return;
+      token = token.trim();
+      // If already connected with this exact token, do not reconnect or duplicate listeners!
+      if (streamlabsSocket && streamlabsSocket.connected && activeConnectedToken === token) {
+        return;
+      }
+      activeConnectedToken = token;
+
       try {
-        if (streamlabsSocket) streamlabsSocket.disconnect();
+        if (streamlabsSocket) {
+          streamlabsSocket.removeAllListeners();
+          streamlabsSocket.disconnect();
+          streamlabsSocket = null;
+        }
+        console.log('[Streamlabs] Connecting with token...');
+
         streamlabsSocket = io(`https://sockets.streamlabs.com?token=${token}`, {
           transports: ['websocket'],
-          reconnection: true
+          reconnection: true,
+          reconnectionDelay: 1000
+        });
+
+        streamlabsSocket.on('connect', () => {
+          console.log('%c[Streamlabs] Successfully Connected to Live Alerts WebSocket! Ready for alerts.', 'color: #10b981; font-weight: bold; font-size: 13px;');
+        });
+
+        streamlabsSocket.on('connect_error', (err) => {
+          console.warn('[Streamlabs] Connection error:', err);
         });
 
         streamlabsSocket.on('event', (eventData) => {
           if (!eventData || !eventData.type) return;
+          console.log('[Streamlabs Live Event Received]', eventData);
 
-          if (eventData.type === 'subscription') {
-            const msg = eventData.message && eventData.message[0] ? eventData.message[0] : {};
-            const isYouTube = eventData.for === 'youtube_account' || msg.for === 'youtube_account';
-            triggerSubscriberAlert({
-              name: msg.name || 'New Subscriber',
-              platform: isYouTube ? 'YouTube' : 'Twitch',
-              tier: msg.sub_type || 'Subscriber',
-              message: msg.message || ''
-            });
-          } else if (eventData.type === 'sponsor' || eventData.type === 'membership') {
-            const msg = eventData.message && eventData.message[0] ? eventData.message[0] : {};
-            triggerSubscriberAlert({
-              name: msg.name || 'New Member',
-              platform: 'YouTube',
-              tier: 'Member',
-              message: msg.message || 'Joined channel membership! ⭐'
-            });
-          } else if (eventData.type === 'superchat') {
-            const msg = eventData.message && eventData.message[0] ? eventData.message[0] : {};
-            triggerSubscriberAlert({
-              name: msg.name || 'Super Chatter',
-              platform: 'YouTube',
-              tier: 'Super Chat',
-              message: `${msg.formatted_amount || ''} ${msg.comment || ''}`.trim()
-            });
+          const type = (eventData.type || '').toLowerCase();
+
+          // 1. Ignore Streamlabs internal auxiliary messages (alertPlaying, test, state, etc.)
+          const validTypes = ['follow', 'subscription', 'sponsor', 'membership', 'resub', 'superchat', 'super_chat', 'supersticker', 'donation', 'bits', 'cheer'];
+          if (!validTypes.includes(type)) {
+            console.log('[Streamlabs Ignored Auxiliary Event]', type);
+            return;
+          }
+
+          const msg = (eventData.message && eventData.message[0]) ? eventData.message[0] : (eventData.message || {});
+          const subName = (msg.name || msg.username || msg.from || '').trim();
+
+          // 2. Reject events without a real name (prevents phantom "Subscriber" alerts)
+          if (!subName || subName.toLowerCase() === 'subscriber' && type !== 'follow') {
+            console.log('[Streamlabs Ignored Event Without Real Name]', eventData);
+            return;
+          }
+
+          const isYouTube = eventData.for === 'youtube_account' || msg.for === 'youtube_account';
+
+          // 3. YouTube platform events
+          if (isYouTube) {
+            if (type === 'subscription' || type === 'sponsor' || type === 'membership') {
+              // YouTube Member / Sponsor
+              triggerSubscriberAlert({
+                name: subName,
+                platform: 'YouTube',
+                tier: 'Member',
+                message: msg.message || 'Joined channel membership! ⭐'
+              });
+            } else if (type === 'superchat' || type === 'super_chat' || type === 'supersticker') {
+              // YouTube Super Chat / Super Sticker
+              triggerSubscriberAlert({
+                name: subName,
+                platform: 'YouTube',
+                tier: 'Super Chat',
+                amount: msg.formatted_amount || msg.amount || '',
+                message: `${msg.formatted_amount || ''} ${msg.comment || msg.message || ''}`.trim()
+              });
+            } else if (type === 'follow') {
+              // YouTube Free Channel Subscriber ('follow')
+              triggerSubscriberAlert({
+                name: subName,
+                platform: 'YouTube',
+                tier: 'Subscriber',
+                message: msg.message || ''
+              });
+            }
+          } else if (eventData.for === 'twitch_account') {
+            // 4. Twitch platform events
+            if (type === 'subscription') {
+              triggerSubscriberAlert({
+                name: subName,
+                platform: 'Twitch',
+                tier: msg.sub_type === 'subgift' ? 'Gift Sub' : 'Subscriber',
+                message: msg.message || ''
+              });
+            } else if (type === 'bits') {
+              triggerSubscriberAlert({
+                name: subName,
+                platform: 'Twitch',
+                tier: 'Cheer',
+                amount: `${msg.amount || ''} Bits`,
+                message: msg.message || ''
+              });
+            } else if (type === 'follow') {
+              triggerSubscriberAlert({
+                name: subName,
+                platform: 'Twitch',
+                tier: 'Follower',
+                message: msg.message || ''
+              });
+            }
+          } else {
+            // 5. General / Direct Streamlabs events
+            if (type === 'superchat' || type === 'super_chat') {
+              triggerSubscriberAlert({
+                name: subName,
+                platform: 'YouTube',
+                tier: 'Super Chat',
+                amount: msg.formatted_amount || msg.amount || '',
+                message: `${msg.formatted_amount || ''} ${msg.comment || msg.message || ''}`.trim()
+              });
+            } else if (type === 'subscription' || type === 'sponsor' || type === 'membership') {
+              triggerSubscriberAlert({
+                name: subName,
+                platform: 'YouTube',
+                tier: 'Member',
+                message: msg.message || 'Joined channel membership! ⭐'
+              });
+            } else if (type === 'donation') {
+              triggerSubscriberAlert({
+                name: subName,
+                platform: 'Donation',
+                tier: 'Tip',
+                amount: msg.formatted_amount || '',
+                message: msg.message || ''
+              });
+            } else if (type === 'follow') {
+              triggerSubscriberAlert({
+                name: subName,
+                platform: 'General',
+                tier: 'Subscriber',
+                message: msg.message || ''
+              });
+            }
           }
         });
-      } catch (err) {}
+      } catch (err) {
+        console.error('[Streamlabs] Error connecting socket:', err);
+      }
     }
 
     let streamElementsSocket = null;
@@ -725,10 +1128,23 @@
       };
     }
 
-    // --- BROADCAST & LOCAL COMMUNICATION ---
+    // --- BROADCAST & LOCAL COMMUNICATION DEDUPLICATION ---
+    const seenCommandIds = new Set();
+    function shouldProcessCommand(data) {
+      if (!data || !data.type) return false;
+      if (data._id) {
+        if (seenCommandIds.has(data._id)) return false;
+        seenCommandIds.add(data._id);
+        setTimeout(() => seenCommandIds.delete(data._id), 8000);
+      }
+      return true;
+    }
+
     try {
       const channel = new BroadcastChannel('buddy_obs_channel');
-      channel.onmessage = (event) => handleControlMessage(event.data);
+      channel.onmessage = (event) => {
+        if (shouldProcessCommand(event.data)) handleControlMessage(event.data);
+      };
     } catch (e) {}
 
     try {
@@ -736,7 +1152,8 @@
         const evtSource = new EventSource('/events');
         evtSource.onmessage = (e) => {
           try {
-            handleControlMessage(JSON.parse(e.data));
+            const data = JSON.parse(e.data);
+            if (shouldProcessCommand(data)) handleControlMessage(data);
           } catch (err) {}
         };
       }
@@ -745,13 +1162,14 @@
     window.addEventListener('storage', (event) => {
       if (event.key === 'buddy_obs_command' && event.newValue) {
         try {
-          handleControlMessage(JSON.parse(event.newValue));
+          const data = JSON.parse(event.newValue);
+          if (shouldProcessCommand(data)) handleControlMessage(data);
         } catch (e) {}
       }
     });
 
     window.addEventListener('message', (event) => {
-      if (event.data) handleControlMessage(event.data);
+      if (event.data && shouldProcessCommand(event.data)) handleControlMessage(event.data);
     });
 
     function handleControlMessage(data) {
@@ -761,7 +1179,7 @@
           triggerSubscriberAlert(data);
           break;
         case 'TRIGGER_ANIMATION':
-          manualTriggerAnimation(data.animation, data.loops || 1);
+          manualTriggerAnimation(data.animation, data.loops || 2);
           break;
         case 'CUSTOM_THOUGHT':
           manualCustomThought(data.text, data.duration || 4000);
@@ -781,43 +1199,7 @@
       }
     }
 
-    // --- FALLBACK TO INDIVIDUAL FRAME FILES (Zero-failure guarantee) ---
-    function fallbackToFrameFiles() {
-      useFallbackFrames = true;
-      const sequencesToLoad = {
-        idle: 8,
-        tail_wag: 8,
-        blinking: 4,
-        jumping: 8,
-        happy: 6
-      };
-      let loadedCount = 0;
-      for (const [seqKey, count] of Object.entries(sequencesToLoad)) {
-        fallbackImages[seqKey] = [];
-        for (let i = 0; i < count; i++) {
-          const img = new Image();
-          img.src = `frames/${seqKey}/${seqKey}_${i}.png`;
-          img.onload = () => {
-            loadedCount++;
-            if (!isSpriteLoaded && loadedCount >= 1) {
-              onSpriteReady();
-            }
-          };
-          fallbackImages[seqKey].push(img);
-        }
-      }
-    }
-
-    function onSpriteReady() {
-      if (isSpriteLoaded) return;
-      isSpriteLoaded = true;
-      setSequence('idle');
-      drawCurrentFrame();
-      scheduleNextRandomAnimation();
-      requestAnimationFrame(animate);
-    }
-
-    // --- INITIALIZATION ---
+    // --- URL PARAMETER PARSER ---
     function parseURLParams() {
       const params = new URLSearchParams(window.location.search);
       if (params.has('sub')) {
@@ -844,10 +1226,18 @@
         settings.enableSound = params.get('sound') !== '0' && params.get('sound') !== 'false';
       }
 
+      if (params.has('voiceVariant')) settings.voiceVariant = params.get('voiceVariant');
+      if (params.has('voiceName')) settings.voiceName = params.get('voiceName');
+      if (params.has('ttsPitch')) settings.ttsPitch = parseFloat(params.get('ttsPitch'));
+      if (params.has('ttsRate')) settings.ttsRate = parseFloat(params.get('ttsRate'));
+      if (params.has('ttsVol')) settings.ttsVolume = parseFloat(params.get('ttsVol'));
+      if (params.has('soundVol')) settings.soundVolume = parseFloat(params.get('soundVol'));
+
       try {
         const savedSettings = localStorage.getItem('buddy_stream_settings');
         if (savedSettings) {
           const parsed = JSON.parse(savedSettings);
+          Object.assign(settings, parsed);
           if (parsed.streamlabsToken) {
             settings.streamlabsToken = parsed.streamlabsToken;
             loadSocketIOAsync();
@@ -860,17 +1250,35 @@
       } catch (e) {}
     }
 
-    function init() {
-      spriteImage.onload = () => onSpriteReady();
-      spriteImage.onerror = () => fallbackToFrameFiles();
+    // --- DIRECT INTERACTION & KEYBOARD SHORTCUTS ---
+    canvas.style.pointerEvents = 'auto';
+    canvas.style.cursor = 'pointer';
+    canvas.addEventListener('click', () => {
+      triggerSubscriberAlert({
+        name: 'Alex Gamer',
+        platform: 'YouTube',
+        tier: 'Subscriber'
+      });
+    });
 
-      if (spriteImage.complete && spriteImage.naturalWidth > 0) {
-        onSpriteReady();
-      } else {
-        spriteImage.src = SPRITE_CONFIG.image_src;
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '1' || e.key === 's' || e.key === 'S') {
+        triggerSubscriberAlert({ name: 'Alex', platform: 'YouTube', tier: 'Subscriber' });
+      } else if (e.key === '2') {
+        manualCustomThought('BRB getting coffee! ☕');
+      } else if (e.key === '3') {
+        setSequence('jumping', 1);
+      } else if (e.key === '4') {
+        setSequence('tail_wag', 2);
       }
+    });
 
+    // --- INITIALIZATION ---
+    function init() {
+      preloadAllFrames();
       parseURLParams();
+      startAnimationLoop();
+      scheduleNextRandomAnimation();
     }
 
     if (document.readyState === 'loading') {

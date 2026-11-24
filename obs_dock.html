@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Buddy - Streamer Control Dock & Live Integrations</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="socket.io.js"></script>
   <style>
     :root {
       --bg-dark: #0f172a;
@@ -146,6 +147,12 @@
     .row-2 {
       display: grid;
       grid-template-columns: 2fr 1fr;
+      gap: 10px;
+    }
+
+    .row-equal {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
 
@@ -346,8 +353,12 @@
           <strong>How to get this (100% Free):</strong><br>
           1. Connect your YouTube or Twitch account at <a href="https://streamlabs.com/dashboard#/settings/api-settings" target="_blank">Streamlabs.com</a><br>
           2. Go to <strong>Settings</strong> &rarr; <strong>API Settings</strong> &rarr; <strong>API Tokens</strong><br>
-          3. Copy <strong>"Your Socket API Token"</strong> and paste it above.<br>
+          3. Copy <strong>"Your Socket API Token"</strong> (NOT the API Access Token) and paste it above.<br>
           <em>Buddy will automatically detect real subscriber names, channel members, and superchats the exact second they happen!</em>
+        </div>
+        <div id="sl-status-box" style="margin-top: 8px; padding: 7px 11px; border-radius: 6px; font-size: 11.5px; display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.12);">
+          <span id="sl-status-text">⚪ Streamlabs: Not Connected</span>
+          <button class="btn btn-secondary" id="btn-reconnect-sl" type="button" style="width: auto; padding: 3px 9px; font-size: 11px;">Connect</button>
         </div>
       </div>
 
@@ -405,16 +416,33 @@
       </div>
     </div>
 
-    <!-- Section 2: Manual Subscriber Trigger -->
+    <!-- Section 2: Manual Alert Tester -->
     <div class="card">
       <div class="card-title">
-        <span>🎉 Manual Subscriber Shoutout</span>
+        <span>🎉 Manual Alert Tester (Super Chat, Member, Sub)</span>
       </div>
       
-      <div class="row-2">
+      <div class="row-equal">
         <div class="form-group">
-          <label>Username</label>
-          <input type="text" id="sub-name" placeholder="Username" value="SuperFan">
+          <label>Viewer Name</label>
+          <input type="text" id="sub-name" placeholder="Username" value="SuperFan99">
+        </div>
+        <div class="form-group">
+          <label>Alert Type</label>
+          <select id="sub-type">
+            <option value="superchat" selected>💰 YouTube Super Chat</option>
+            <option value="member">⭐ YouTube Member</option>
+            <option value="subscriber">🔴 YouTube Subscriber</option>
+            <option value="twitch_sub">🟣 Twitch Subscriber</option>
+            <option value="twitch_cheer">💎 Twitch Cheer</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row-equal" id="amount-row">
+        <div class="form-group">
+          <label>Amount (For Super Chat / Cheer)</label>
+          <input type="text" id="sub-amount" placeholder="e.g. $20.00" value="$20.00">
         </div>
         <div class="form-group">
           <label>Platform</label>
@@ -426,12 +454,12 @@
       </div>
 
       <div class="form-group">
-        <label>Message (Optional)</label>
-        <input type="text" id="sub-msg" placeholder="e.g. Happy to join!">
+        <label>Message (Comment shown in Thought Bubble)</label>
+        <input type="text" id="sub-msg" placeholder="e.g. Keep up the awesome streams! 🔥" value="Keep up the awesome streams! 🔥">
       </div>
 
       <button class="btn btn-primary" id="btn-fire-sub">
-        🐾 Send Manual Sub Alert
+        🐾 Send Custom Alert to Buddy
       </button>
     </div>
 
@@ -451,19 +479,67 @@
 
   <!-- Settings & Controls (Shared across both tabs) -->
   <div class="card">
-    <div class="card-title">⚙️ Audio &amp; Activity Settings</div>
+    <div class="card-title">⚙️ Audio &amp; Voice Settings</div>
 
-    <div class="toggle-row">
-      <span>Text-to-Speech Voice ("Thank you [name]")</span>
-      <input type="checkbox" id="set-tts" checked>
+    <div class="form-group" style="margin-top: 6px;">
+      <label>Alert Sound Style</label>
+      <select id="set-sound-mode">
+        <option value="chime" selected>🔔 Musical Chime Only (Recommended - Clean &amp; Pleasant)</option>
+        <option value="bark">🐶 Playful Puppy Bark + Chime</option>
+        <option value="voice_female">🌸 Female Voice (Microsoft Zira) + Chime</option>
+        <option value="voice_male">🎙️ Male Voice (Microsoft David) + Chime</option>
+        <option value="both">⚙️ Custom Voice + Chime</option>
+        <option value="mute">🔇 Mute All Audio (Silent)</option>
+      </select>
     </div>
 
-    <div class="toggle-row">
-      <span>Play Audio Chime Sound</span>
-      <input type="checkbox" id="set-sound" checked>
+    <!-- Specific Installed System Voice Dropdown (Shown when Custom Voice is selected) -->
+    <div class="form-group" id="group-system-voice" style="display: none;">
+      <label>Installed System Voice</label>
+      <select id="set-system-voice">
+        <option value="">Default (Auto Detect)</option>
+      </select>
     </div>
 
-    <div class="form-group" style="margin-top: 10px;">
+    <!-- Voice Pitch & Rate Sliders (Visible when a voice mode is active) -->
+    <div id="voice-controls-panel" style="display: none;">
+      <div class="row-equal">
+        <div class="form-group">
+          <label>Voice Pitch: <span id="pitch-val">1.15</span>x</label>
+          <input type="range" id="set-pitch" min="0.6" max="1.8" step="0.05" value="1.15">
+        </div>
+        <div class="form-group">
+          <label>Voice Speed: <span id="rate-val">1.05</span>x</label>
+          <input type="range" id="set-rate" min="0.7" max="1.5" step="0.05" value="1.05">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Voice Volume: <span id="tts-vol-val">90</span>%</label>
+        <input type="range" id="set-tts-vol" min="10" max="100" step="5" value="90">
+      </div>
+    </div>
+
+    <!-- Volumes -->
+    <div class="form-group">
+      <label>Chime &amp; Sound FX Volume: <span id="sound-vol-val">80</span>%</label>
+      <input type="range" id="set-sound-vol" min="10" max="100" step="5" value="80">
+    </div>
+
+    <!-- Test Audio Button -->
+    <div style="display: flex; gap: 8px; margin-top: 4px; margin-bottom: 10px;">
+      <button class="btn btn-secondary" id="btn-test-voice" style="flex: 1; padding: 7px; font-size: 11.5px;">
+        🔊 Test Sound / Voice Preview
+      </button>
+      <button class="btn btn-secondary" id="btn-reset-voice" style="padding: 7px 12px; font-size: 11.5px;" title="Reset Audio to Default Chime">
+        ↺ Reset
+      </button>
+    </div>
+
+    <div class="info-callout" style="font-size: 11px; margin-bottom: 12px; margin-top: 0;">
+      💡 <b>Why Windows only has 2 voices:</b> Windows defaults to <b>David (Male)</b> and <b>Zira (Female)</b>. If you want more voices (like British Hazel or Australian Catherine), open <b>Windows Settings → Time &amp; Language → Speech → Add voices</b>.
+    </div>
+
+    <div class="form-group">
       <label>Bubble Duration (<span id="dur-val">5.5</span> seconds)</label>
       <input type="range" id="set-duration" min="2000" max="15000" step="500" value="5500">
     </div>
@@ -489,31 +565,180 @@
       if (el) el.classList.add('active');
     }
 
-    // Communication via BroadcastChannel & LocalStorage
+    // Communication via BroadcastChannel & LocalStorage with unique message deduplication
     let channel = null;
     try {
       channel = new BroadcastChannel('buddy_obs_channel');
     } catch (e) {}
 
     function sendCommand(cmdData) {
-      if (channel) channel.postMessage(cmdData);
+      const payload = {
+        ...cmdData,
+        _id: 'cmd_' + Date.now() + '_' + Math.random().toString(36).substr(2, 7),
+        _timestamp: Date.now()
+      };
+      if (channel) channel.postMessage(payload);
       try {
-        localStorage.setItem('buddy_obs_command', JSON.stringify({
-          ...cmdData,
-          _timestamp: Date.now()
-        }));
+        localStorage.setItem('buddy_obs_command', JSON.stringify(payload));
       } catch (e) {}
     }
+
+    // Audio Preview Synthesizer (Chime + Dog Bark for Dock Testing)
+    let dockAudioCtx = null;
+    function playDockChime(vol = 0.8) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!dockAudioCtx) dockAudioCtx = new AudioCtx();
+        if (dockAudioCtx.state === 'suspended') dockAudioCtx.resume();
+
+        const now = dockAudioCtx.currentTime;
+        const notes = [659.25, 830.61, 987.77, 1318.51];
+        notes.forEach((freq, idx) => {
+          const osc = dockAudioCtx.createOscillator();
+          const gain = dockAudioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+
+          gain.gain.setValueAtTime(0, now + idx * 0.1);
+          gain.gain.linearRampToValueAtTime(0.25 * vol, now + idx * 0.1 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.35);
+
+          osc.connect(gain);
+          gain.connect(dockAudioCtx.destination);
+
+          osc.start(now + idx * 0.1);
+          osc.stop(now + idx * 0.1 + 0.4);
+        });
+      } catch (e) {}
+    }
+
+    function playDockBark(vol = 0.8) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!dockAudioCtx) dockAudioCtx = new AudioCtx();
+        if (dockAudioCtx.state === 'suspended') dockAudioCtx.resume();
+
+        const now = dockAudioCtx.currentTime;
+        [0, 0.15].forEach(offset => {
+          const osc = dockAudioCtx.createOscillator();
+          const gain = dockAudioCtx.createGain();
+          const filter = dockAudioCtx.createBiquadFilter();
+
+          osc.type = 'sawtooth';
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(650, now + offset);
+          filter.Q.setValueAtTime(2.5, now + offset);
+
+          osc.frequency.setValueAtTime(520, now + offset);
+          osc.frequency.exponentialRampToValueAtTime(220, now + offset + 0.11);
+
+          gain.gain.setValueAtTime(0, now + offset);
+          gain.gain.linearRampToValueAtTime(0.28 * vol, now + offset + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.12);
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(dockAudioCtx.destination);
+
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.13);
+        });
+      } catch (e) {}
+    }
+
+    // Populate System Voices
+    let dockVoices = [];
+    function populateVoices() {
+      if (!('speechSynthesis' in window)) return;
+      dockVoices = window.speechSynthesis.getVoices() || [];
+      const sel = document.getElementById('set-system-voice');
+      const currentVal = sel.value;
+      sel.innerHTML = '<option value="">Default (Auto Detect)</option>';
+      dockVoices.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.name;
+        opt.textContent = `${v.name} (${v.lang})`;
+        sel.appendChild(opt);
+      });
+      if (currentVal) sel.value = currentVal;
+    }
+    if ('speechSynthesis' in window) {
+      populateVoices();
+      window.speechSynthesis.onvoiceschanged = populateVoices;
+    }
+
+    // Streamlabs Live Socket in Dock
+    let dockStreamlabsSocket = null;
+    function connectDockStreamlabs(token) {
+      const statusText = document.getElementById('sl-status-text');
+      const box = document.getElementById('sl-status-box');
+      if (!token) {
+        if (statusText) statusText.innerHTML = '⚪ Streamlabs: No token entered yet';
+        return;
+      }
+      token = token.trim();
+      if (typeof io === 'undefined') {
+        if (statusText) statusText.innerHTML = '🟡 Streamlabs: Loading socket engine...';
+        return;
+      }
+
+      try {
+        if (dockStreamlabsSocket) dockStreamlabsSocket.disconnect();
+        if (statusText) statusText.innerHTML = '🟡 Streamlabs: Connecting to WebSocket...';
+
+        dockStreamlabsSocket = io(`https://sockets.streamlabs.com?token=${token}`, {
+          transports: ['websocket'],
+          reconnection: true,
+          reconnectionDelay: 1000
+        });
+
+        dockStreamlabsSocket.on('connect', () => {
+          if (statusText) statusText.innerHTML = '🟢 <b>Streamlabs Connected!</b> Ready for YouTube &amp; Twitch alerts';
+          if (box) box.style.borderColor = 'rgba(16, 185, 129, 0.5)';
+        });
+
+        dockStreamlabsSocket.on('connect_error', (err) => {
+          if (statusText) statusText.innerHTML = '🔴 <b>Connection Error:</b> Check that your Socket Token is valid';
+          if (box) box.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+        });
+
+        dockStreamlabsSocket.on('event', (eventData) => {
+          if (!eventData || !eventData.type) return;
+          const msg = (eventData.message && eventData.message[0]) ? eventData.message[0] : (eventData.message || {});
+          const subName = msg.name || msg.username || msg.from || 'Subscriber';
+          const isYouTube = eventData.for === 'youtube_account' || msg.for === 'youtube_account';
+
+          const type = (eventData.type || '').toLowerCase();
+
+          let alertLabel = 'Subscriber';
+          if (type === 'superchat' || type === 'super_chat') alertLabel = 'Super Chat';
+          else if (type === 'subscription' || type === 'sponsor' || type === 'membership') alertLabel = isYouTube ? 'Member' : 'Subscriber';
+
+          if (statusText) {
+            statusText.innerHTML = `🎉 <b>Alert Received!</b> ${subName} (${isYouTube ? 'YouTube ' + alertLabel : alertLabel})`;
+            setTimeout(() => {
+              if (statusText) statusText.innerHTML = '🟢 <b>Streamlabs Connected!</b> Ready for YouTube &amp; Twitch alerts';
+            }, 6000);
+          }
+        });
+      } catch (err) {
+        if (statusText) statusText.innerHTML = '🔴 Error creating socket connection';
+      }
+    }
+
+    document.getElementById('btn-reconnect-sl').addEventListener('click', () => {
+      const token = document.getElementById('input-streamlabs-token').value.trim();
+      connectDockStreamlabs(token);
+    });
 
     // Save Live Account Tokens
     document.getElementById('btn-save-integrations').addEventListener('click', () => {
       const streamlabsToken = document.getElementById('input-streamlabs-token').value.trim();
       const twitchChannel = document.getElementById('input-twitch-channel').value.trim();
 
-      const saved = {
-        streamlabsToken: streamlabsToken,
-        twitchChannel: twitchChannel
-      };
+      const saved = getSettingsObject();
+      saved.streamlabsToken = streamlabsToken;
+      saved.twitchChannel = twitchChannel;
 
       try {
         localStorage.setItem('buddy_stream_settings', JSON.stringify(saved));
@@ -524,7 +749,8 @@
         settings: saved
       });
 
-      alert('✅ Settings saved! If your overlay is open in OBS, it will connect immediately.');
+      connectDockStreamlabs(streamlabsToken);
+      alert('✅ Settings saved! Connecting to Streamlabs live alerts.');
     });
 
     // Simulate Platform Alerts
@@ -558,17 +784,38 @@
       });
     }
 
-    // Manual Sub Alert
+    // Manual Alert Tester
     document.getElementById('btn-fire-sub').addEventListener('click', () => {
-      const name = document.getElementById('sub-name').value.trim() || 'New Subscriber';
-      const platform = document.getElementById('sub-platform').value;
+      const name = document.getElementById('sub-name').value.trim() || 'SuperFan99';
+      const alertType = document.getElementById('sub-type').value;
+      const amount = document.getElementById('sub-amount').value.trim();
       const message = document.getElementById('sub-msg').value.trim();
+      let platform = document.getElementById('sub-platform').value;
+      let tier = 'Super Chat';
+
+      if (alertType === 'superchat') {
+        platform = 'YouTube';
+        tier = 'Super Chat';
+      } else if (alertType === 'member') {
+        platform = 'YouTube';
+        tier = 'Member';
+      } else if (alertType === 'subscriber') {
+        platform = 'YouTube';
+        tier = 'Subscriber';
+      } else if (alertType === 'twitch_sub') {
+        platform = 'Twitch';
+        tier = 'Subscriber';
+      } else if (alertType === 'twitch_cheer') {
+        platform = 'Twitch';
+        tier = 'Cheer';
+      }
 
       sendCommand({
         type: 'SUBSCRIBER_ALERT',
         name: name,
         platform: platform,
-        tier: 'Subscriber',
+        tier: tier,
+        amount: amount,
         message: message
       });
     });
@@ -590,24 +837,152 @@
       });
     }
 
+    // Sound Mode & Voice visibility toggle
+    function updateAudioPanelsVisibility() {
+      const mode = document.getElementById('set-sound-mode').value;
+      const voicePanel = document.getElementById('voice-controls-panel');
+      const sysVoiceGroup = document.getElementById('group-system-voice');
+
+      if (mode === 'voice_female' || mode === 'voice_male' || mode === 'both') {
+        voicePanel.style.display = 'block';
+        if (mode === 'both') {
+          sysVoiceGroup.style.display = 'block';
+        } else {
+          sysVoiceGroup.style.display = 'none';
+        }
+      } else {
+        voicePanel.style.display = 'none';
+        sysVoiceGroup.style.display = 'none';
+      }
+    }
+
+    document.getElementById('set-sound-mode').addEventListener('change', () => {
+      updateAudioPanelsVisibility();
+      pushSettings();
+    });
+
+    function getSettingsObject() {
+      const duration = parseInt(document.getElementById('set-duration').value, 10);
+      const pitch = parseFloat(document.getElementById('set-pitch').value);
+      const rate = parseFloat(document.getElementById('set-rate').value);
+      const ttsVol = parseInt(document.getElementById('set-tts-vol').value, 10) / 100;
+      const soundVol = parseInt(document.getElementById('set-sound-vol').value, 10) / 100;
+      const soundMode = document.getElementById('set-sound-mode').value;
+      const voiceName = document.getElementById('set-system-voice').value;
+
+      let variant = 'female';
+      if (soundMode === 'voice_male') variant = 'male';
+      else if (soundMode === 'voice_female') variant = 'female';
+      else if (soundMode === 'both') variant = 'custom';
+
+      return {
+        soundMode: soundMode,
+        enableTTS: soundMode.startsWith('voice') || soundMode === 'both',
+        enableSound: soundMode !== 'mute',
+        voiceVariant: variant,
+        voiceName: voiceName,
+        ttsPitch: pitch,
+        ttsRate: rate,
+        ttsVolume: ttsVol,
+        soundVolume: soundVol,
+        bubbleDuration: duration,
+        randomFrequency: document.getElementById('set-freq').value
+      };
+    }
+
     // Settings Sync
     function pushSettings() {
-      const duration = parseInt(document.getElementById('set-duration').value, 10);
-      document.getElementById('dur-val').textContent = (duration / 1000).toFixed(1);
+      const settings = getSettingsObject();
+
+      document.getElementById('dur-val').textContent = (settings.bubbleDuration / 1000).toFixed(1);
+      document.getElementById('pitch-val').textContent = settings.ttsPitch.toFixed(2);
+      document.getElementById('rate-val').textContent = settings.ttsRate.toFixed(2);
+      document.getElementById('tts-vol-val').textContent = Math.round(settings.ttsVolume * 100);
+      document.getElementById('sound-vol-val').textContent = Math.round(settings.soundVolume * 100);
+
+      // Persist to localStorage
+      try {
+        const existing = JSON.parse(localStorage.getItem('buddy_stream_settings') || '{}');
+        localStorage.setItem('buddy_stream_settings', JSON.stringify({ ...existing, ...settings }));
+      } catch (e) {}
 
       sendCommand({
         type: 'UPDATE_SETTINGS',
-        settings: {
-          enableTTS: document.getElementById('set-tts').checked,
-          enableSound: document.getElementById('set-sound').checked,
-          bubbleDuration: duration,
-          randomFrequency: document.getElementById('set-freq').value
-        }
+        settings: settings
       });
     }
 
-    document.getElementById('set-tts').addEventListener('change', pushSettings);
-    document.getElementById('set-sound').addEventListener('change', pushSettings);
+    // Test Sound Preview in Dock
+    document.getElementById('btn-test-voice').addEventListener('click', () => {
+      const settings = getSettingsObject();
+      const soundVol = settings.soundVolume;
+
+      if (settings.soundMode === 'mute') {
+        alert('🔇 Sound is currently set to Mute.');
+        return;
+      }
+
+      if (settings.soundMode === 'chime') {
+        playDockChime(soundVol);
+        return;
+      }
+
+      if (settings.soundMode === 'bark') {
+        playDockBark(soundVol);
+        setTimeout(() => playDockChime(soundVol), 180);
+        return;
+      }
+
+      // Voice modes
+      playDockChime(soundVol);
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance("Thank you, Alex! Welcome to the pack!");
+        utterance.volume = settings.ttsVolume;
+        utterance.pitch = settings.ttsPitch;
+        utterance.rate = settings.ttsRate;
+
+        if (dockVoices.length === 0) populateVoices();
+
+        let chosen = null;
+        if (settings.soundMode === 'both' && settings.voiceName) {
+          chosen = dockVoices.find(v => v.name === settings.voiceName);
+        }
+        if (!chosen) {
+          if (settings.soundMode === 'voice_male') {
+            chosen = dockVoices.find(v => v.lang.startsWith('en') && /david|mark|george|guy/i.test(v.name));
+          } else {
+            chosen = dockVoices.find(v => v.lang.startsWith('en') && /zira|jenny|samantha|hazel|google|natural|aria/i.test(v.name));
+          }
+        }
+        if (!chosen) {
+          chosen = dockVoices.find(v => v.lang.startsWith('en')) || dockVoices[0];
+        }
+        if (chosen) utterance.voice = chosen;
+
+        window.speechSynthesis.speak(utterance);
+      }
+    });
+
+    // Reset Audio to default pleasant Chime
+    document.getElementById('btn-reset-voice').addEventListener('click', () => {
+      document.getElementById('set-sound-mode').value = 'chime';
+      document.getElementById('group-system-voice').style.display = 'none';
+      document.getElementById('set-system-voice').value = '';
+      document.getElementById('set-pitch').value = 1.15;
+      document.getElementById('set-rate').value = 1.05;
+      document.getElementById('set-tts-vol').value = 90;
+      document.getElementById('set-sound-vol').value = 80;
+      updateAudioPanelsVisibility();
+      pushSettings();
+    });
+
+    document.getElementById('set-pitch').addEventListener('input', pushSettings);
+    document.getElementById('set-rate').addEventListener('input', pushSettings);
+    document.getElementById('set-tts-vol').addEventListener('input', pushSettings);
+    document.getElementById('set-sound-vol').addEventListener('input', pushSettings);
+    document.getElementById('set-system-voice').addEventListener('change', pushSettings);
     document.getElementById('set-duration').addEventListener('input', pushSettings);
     document.getElementById('set-freq').addEventListener('change', pushSettings);
 
@@ -617,8 +992,44 @@
         const saved = localStorage.getItem('buddy_stream_settings');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed.streamlabsToken) document.getElementById('input-streamlabs-token').value = parsed.streamlabsToken;
+          if (parsed.streamlabsToken) {
+            document.getElementById('input-streamlabs-token').value = parsed.streamlabsToken;
+            connectDockStreamlabs(parsed.streamlabsToken);
+          }
           if (parsed.twitchChannel) document.getElementById('input-twitch-channel').value = parsed.twitchChannel;
+
+          if (parsed.soundMode) {
+            document.getElementById('set-sound-mode').value = parsed.soundMode;
+          } else if (parsed.enableTTS === false) {
+            document.getElementById('set-sound-mode').value = 'chime';
+          }
+          if (parsed.voiceName) {
+            document.getElementById('set-system-voice').value = parsed.voiceName;
+          }
+          if (typeof parsed.ttsPitch === 'number') {
+            document.getElementById('set-pitch').value = parsed.ttsPitch;
+            document.getElementById('pitch-val').textContent = parsed.ttsPitch.toFixed(2);
+          }
+          if (typeof parsed.ttsRate === 'number') {
+            document.getElementById('set-rate').value = parsed.ttsRate;
+            document.getElementById('rate-val').textContent = parsed.ttsRate.toFixed(2);
+          }
+          if (typeof parsed.ttsVolume === 'number') {
+            document.getElementById('set-tts-vol').value = Math.round(parsed.ttsVolume * 100);
+            document.getElementById('tts-vol-val').textContent = Math.round(parsed.ttsVolume * 100);
+          }
+          if (typeof parsed.soundVolume === 'number') {
+            document.getElementById('set-sound-vol').value = Math.round(parsed.soundVolume * 100);
+            document.getElementById('sound-vol-val').textContent = Math.round(parsed.soundVolume * 100);
+          }
+          if (parsed.bubbleDuration) {
+            document.getElementById('set-duration').value = parsed.bubbleDuration;
+            document.getElementById('dur-val').textContent = (parsed.bubbleDuration / 1000).toFixed(1);
+          }
+          if (parsed.randomFrequency) {
+            document.getElementById('set-freq').value = parsed.randomFrequency;
+          }
+          updateAudioPanelsVisibility();
         }
       } catch (e) {}
     });
