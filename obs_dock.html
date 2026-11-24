@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Buddy - OBS Streamer Control Dock</title>
+  <title>Buddy - Streamer Control Dock & Live Integrations</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     :root {
@@ -14,6 +14,8 @@
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --success: #10b981;
+      --youtube: #ef4444;
+      --twitch: #a855f7;
     }
 
     * {
@@ -27,7 +29,7 @@
       color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       padding: 16px;
-      font-size: 14px;
+      font-size: 13.5px;
       line-height: 1.5;
     }
 
@@ -51,7 +53,7 @@
     }
 
     h1 {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
       color: #fff;
     }
@@ -93,7 +95,7 @@
     }
 
     .card-title {
-      font-size: 13px;
+      font-size: 12.5px;
       text-transform: uppercase;
       letter-spacing: 0.8px;
       color: var(--accent);
@@ -101,11 +103,20 @@
       margin-bottom: 12px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+    }
+
+    .card-title .tag {
+      font-size: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 7px;
+      border-radius: 4px;
+      color: var(--text-muted);
+      text-transform: none;
     }
 
     .form-group {
-      margin-bottom: 12px;
+      margin-bottom: 11px;
     }
 
     label {
@@ -116,19 +127,19 @@
       font-weight: 500;
     }
 
-    input[type="text"], select, textarea {
+    input[type="text"], input[type="password"], select, textarea {
       width: 100%;
       background: rgba(15, 23, 42, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 8px;
-      padding: 9px 12px;
+      padding: 8px 12px;
       color: #fff;
       font-size: 13px;
       outline: none;
       transition: border-color 0.2s;
     }
 
-    input[type="text"]:focus, select:focus, textarea:focus {
+    input[type="text"]:focus, input[type="password"]:focus, select:focus, textarea:focus {
       border-color: var(--accent);
     }
 
@@ -144,9 +155,9 @@
       justify-content: center;
       gap: 8px;
       width: 100%;
-      padding: 10px 16px;
+      padding: 9px 14px;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 700;
       cursor: pointer;
       border: none;
@@ -162,6 +173,18 @@
     .btn-primary:hover {
       background: linear-gradient(135deg, #fbbf24, #f59e0b);
       transform: translateY(-1px);
+    }
+
+    .btn-youtube {
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(239, 68, 68, 0.35);
+    }
+
+    .btn-twitch {
+      background: linear-gradient(135deg, #9333ea, #6b21a8);
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(147, 51, 234, 0.35);
     }
 
     .btn-secondary {
@@ -185,7 +208,7 @@
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 6px;
-      padding: 4px 10px;
+      padding: 4px 9px;
       font-size: 11px;
       color: var(--text-muted);
       cursor: pointer;
@@ -196,6 +219,16 @@
       color: #fff;
       background: rgba(245, 158, 11, 0.2);
       border-color: var(--accent);
+    }
+
+    .chip.chip-afk {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
+    }
+    .chip.chip-afk:hover {
+      background: rgba(59, 130, 246, 0.35);
+      color: #fff;
     }
 
     .btn-grid-3 {
@@ -234,24 +267,46 @@
       accent-color: var(--accent);
     }
 
-    .obs-setup-box {
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 8px;
-      padding: 10px;
+    .info-callout {
+      background: rgba(15, 23, 42, 0.6);
+      border-left: 3px solid var(--accent);
+      padding: 8px 12px;
       font-size: 11.5px;
       color: #cbd5e1;
+      border-radius: 0 6px 6px 0;
+      margin-top: 8px;
+      line-height: 1.45;
     }
 
-    .code-pill {
-      background: #000;
+    .info-callout a {
       color: #fbbf24;
-      font-family: monospace;
-      padding: 3px 6px;
-      border-radius: 4px;
-      word-break: break-all;
-      display: block;
-      margin: 6px 0;
-      user-select: all;
+      text-decoration: underline;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      text-align: center;
+      transition: 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #1e1b4b;
+      border-color: var(--accent);
     }
   </style>
 </head>
@@ -262,88 +317,144 @@
       <div class="logo-badge">🐶</div>
       <div>
         <h1>Buddy Control Dock</h1>
-        <div style="font-size: 11px; color: var(--text-muted);">OBS Streamer Companion</div>
+        <div style="font-size: 11px; color: var(--text-muted);">Dynamic Alerts &amp; AFK Companion</div>
       </div>
     </div>
     <div class="status-pill" id="conn-status">
-      <span class="status-dot"></span> Live Link
+      <span class="status-dot"></span> Live Sync
     </div>
   </header>
 
-  <!-- Section 1: Trigger Subscriber Alert -->
-  <div class="card">
-    <div class="card-title">🎉 Trigger Subscriber Alert</div>
-    
-    <div class="row-2">
+  <!-- NAVIGATION SWITCHER -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchView('live-tab', this)">📡 Auto-Alerts (YT &amp; Twitch)</button>
+    <button class="tab-btn" onclick="switchView('manual-tab', this)">💬 AFK &amp; Quick Reactions</button>
+  </div>
+
+  <!-- TAB 1: AUTO LIVE INTEGRATIONS (YOUTUBE & TWITCH) -->
+  <div id="live-tab" class="view-panel">
+    <div class="card" style="border-color: rgba(239, 68, 68, 0.35);">
+      <div class="card-title" style="color: #f87171;">
+        <span>🔴 YouTube &amp; Twitch Auto-Alerts</span>
+        <span class="tag">Zero-Config Streamlabs</span>
+      </div>
+
       <div class="form-group">
-        <label>Subscriber Username</label>
-        <input type="text" id="sub-name" placeholder="e.g. StarGamer42" value="Alex">
+        <label>Streamlabs Socket API Token (For Realtime YouTube/Twitch Subs)</label>
+        <input type="password" id="input-streamlabs-token" placeholder="Paste Socket API Token from Streamlabs">
+        <div class="info-callout">
+          <strong>How to get this (100% Free):</strong><br>
+          1. Connect your YouTube or Twitch account at <a href="https://streamlabs.com/dashboard#/settings/api-settings" target="_blank">Streamlabs.com</a><br>
+          2. Go to <strong>Settings</strong> &rarr; <strong>API Settings</strong> &rarr; <strong>API Tokens</strong><br>
+          3. Copy <strong>"Your Socket API Token"</strong> and paste it above.<br>
+          <em>Buddy will automatically detect real subscriber names, channel members, and superchats the exact second they happen!</em>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 10px;">
+        <label>Twitch Channel Name (Optional direct chat listener)</label>
+        <input type="text" id="input-twitch-channel" placeholder="e.g. your_twitch_name">
+      </div>
+
+      <button class="btn btn-primary" id="btn-save-integrations">
+        💾 Save &amp; Connect Live Alerts
+      </button>
+
+      <div style="margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+        <label>Simulate Real Platform Alerts:</label>
+        <div class="btn-grid-2">
+          <button class="btn btn-youtube" onclick="simulatePlatform('YouTube', 'Alex Gaming', 'Subscriber', 'Thanks for the stream!')">
+            🔴 Test YouTube Sub
+          </button>
+          <button class="btn btn-youtube" style="background: linear-gradient(135deg, #10b981, #047857);" onclick="simulatePlatform('YouTube', 'Sarah Star', 'Member', 'Joined as a channel member! ⭐')">
+            ⭐ Test YT Member
+          </button>
+          <button class="btn btn-twitch" onclick="simulatePlatform('Twitch', 'PixelMaster99', 'Tier 1', 'Subbed with Prime!')">
+            🟣 Test Twitch Sub
+          </button>
+          <button class="btn btn-secondary" onclick="simulatePlatform('YouTube', 'GamerGod', 'Super Chat', '$10.00 - Best pet ever!')">
+            💰 Test SuperChat
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: AFK, CUSTOM THOUGHTS & MANUAL CONTROLS -->
+  <div id="manual-tab" class="view-panel" style="display: none;">
+    <!-- Section 1: AFK & Custom Thought Bubble -->
+    <div class="card" style="border-color: rgba(59, 130, 246, 0.35);">
+      <div class="card-title" style="color: #60a5fa;">
+        <span>💬 AFK &amp; Custom Thought Bubble</span>
+        <span class="tag">Live On Stream</span>
       </div>
       <div class="form-group">
-        <label>Tier</label>
-        <select id="sub-tier">
-          <option value="Tier 1">Tier 1</option>
-          <option value="Tier 2">Tier 2</option>
-          <option value="Tier 3">Tier 3</option>
-          <option value="Prime">Prime</option>
-          <option value="Gift Sub">Gift Sub</option>
-        </select>
+        <label>Custom Message (Shows in Buddy's thought bubble)</label>
+        <input type="text" id="custom-bubble-text" placeholder="e.g. BRB getting coffee! ☕" value="BRB getting coffee! ☕">
+      </div>
+      <button class="btn btn-secondary" id="btn-say-custom" style="background: rgba(59, 130, 246, 0.25); border-color: #3b82f6;">
+        💭 Pop Thought Bubble
+      </button>
+
+      <div class="quick-chips">
+        <span class="chip chip-afk" onclick="setCustomText('BRB getting coffee! ☕')">☕ BRB Coffee</span>
+        <span class="chip chip-afk" onclick="setCustomText('Taking a quick 5 min break! 🐾')">⏱️ 5 Min Break</span>
+        <span class="chip chip-afk" onclick="setCustomText('Stream Starting Soon! 🎮')">🎮 Starting Soon</span>
+        <span class="chip chip-afk" onclick="setCustomText('Technical difficulties, back in a sec! 🛠️')">🛠️ Tech Break</span>
+        <span class="chip chip-afk" onclick="setCustomText('GG everyone! That was awesome! 🏆')">🏆 GG WP</span>
       </div>
     </div>
 
-    <div class="form-group">
-      <label>Sub Message / Shoutout (Optional)</label>
-      <input type="text" id="sub-msg" placeholder="e.g. Happy to join the pack!">
+    <!-- Section 2: Manual Subscriber Trigger -->
+    <div class="card">
+      <div class="card-title">
+        <span>🎉 Manual Subscriber Shoutout</span>
+      </div>
+      
+      <div class="row-2">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="sub-name" placeholder="Username" value="SuperFan">
+        </div>
+        <div class="form-group">
+          <label>Platform</label>
+          <select id="sub-platform">
+            <option value="YouTube">YouTube</option>
+            <option value="Twitch">Twitch</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Message (Optional)</label>
+        <input type="text" id="sub-msg" placeholder="e.g. Happy to join!">
+      </div>
+
+      <button class="btn btn-primary" id="btn-fire-sub">
+        🐾 Send Manual Sub Alert
+      </button>
     </div>
 
-    <button class="btn btn-primary" id="btn-fire-sub">
-      🐾 Trigger Sub Alert
-    </button>
-
-    <div class="quick-chips">
-      <span class="chip" onclick="quickSub('Emma', 'Tier 1')">+ Emma</span>
-      <span class="chip" onclick="quickSub('NinjaFox', 'Tier 2')">+ NinjaFox</span>
-      <span class="chip" onclick="quickSub('RetroPixel', 'Prime')">+ RetroPixel</span>
-      <span class="chip" onclick="quickSub('SuperSupporter', 'Gift Sub')">+ SuperSupporter</span>
-    </div>
-  </div>
-
-  <!-- Section 2: Custom Speech / Message -->
-  <div class="card">
-    <div class="card-title">💬 Speak Custom Message</div>
-    <div class="form-group">
-      <input type="text" id="custom-bubble-text" placeholder="e.g. BRB getting coffee! ☕" value="BRB getting coffee! ☕">
-    </div>
-    <button class="btn btn-secondary" id="btn-say-custom">
-      Show Thought Bubble
-    </button>
-    <div class="quick-chips" style="margin-top: 8px;">
-      <span class="chip" onclick="setCustomText('Stream Starting Soon! 🎮')">Stream Starting</span>
-      <span class="chip" onclick="setCustomText('BRB getting coffee! ☕')">BRB</span>
-      <span class="chip" onclick="setCustomText('GG Everyone! 🏆')">GG</span>
-      <span class="chip" onclick="setCustomText('Don\'t forget to follow! 💖')">Reminder</span>
-    </div>
-  </div>
-
-  <!-- Section 3: Manual Reaction Triggers -->
-  <div class="card">
-    <div class="card-title">🎬 Manual Reactions</div>
-    <div class="btn-grid-3">
-      <button class="btn btn-secondary" onclick="triggerAnim('jumping', 1)">🦘 Jump</button>
-      <button class="btn btn-secondary" onclick="triggerAnim('happy', 2)">✨ Happy</button>
-      <button class="btn btn-secondary" onclick="triggerAnim('tail_wag', 3)">🐾 Wag Tail</button>
-      <button class="btn btn-secondary" onclick="triggerAnim('blinking', 1)">👁️ Blink</button>
-      <button class="btn btn-secondary" onclick="triggerAnim('idle', 1)">💤 Idle</button>
-      <button class="btn btn-secondary" onclick="triggerSoundOnly()">🔔 Chime</button>
+    <!-- Section 3: Manual Character Reactions -->
+    <div class="card">
+      <div class="card-title">🎬 Force Character Reaction</div>
+      <div class="btn-grid-3">
+        <button class="btn btn-secondary" onclick="triggerAnim('jumping', 1)">🦘 Jump</button>
+        <button class="btn btn-secondary" onclick="triggerAnim('happy', 2)">✨ Happy</button>
+        <button class="btn btn-secondary" onclick="triggerAnim('tail_wag', 3)">🐾 Wag Tail</button>
+        <button class="btn btn-secondary" onclick="triggerAnim('blinking', 1)">👁️ Blink</button>
+        <button class="btn btn-secondary" onclick="triggerAnim('idle', 1)">💤 Idle</button>
+        <button class="btn btn-secondary" onclick="triggerBarkOnly()">🐶 Bark</button>
+      </div>
     </div>
   </div>
 
-  <!-- Section 4: Behavior & Audio Settings -->
+  <!-- Settings & Controls (Shared across both tabs) -->
   <div class="card">
-    <div class="card-title">⚙️ Behavior & Audio</div>
+    <div class="card-title">⚙️ Audio &amp; Activity Settings</div>
 
     <div class="toggle-row">
-      <span>Text-to-Speech (Thank you [name])</span>
+      <span>Text-to-Speech Voice ("Thank you [name]")</span>
       <input type="checkbox" id="set-tts" checked>
     </div>
 
@@ -353,12 +464,12 @@
     </div>
 
     <div class="form-group" style="margin-top: 10px;">
-      <label>Bubble Duration (<span id="dur-val">5.5</span>s)</label>
-      <input type="range" id="set-duration" min="2000" max="12000" step="500" value="5500">
+      <label>Bubble Duration (<span id="dur-val">5.5</span> seconds)</label>
+      <input type="range" id="set-duration" min="2000" max="15000" step="500" value="5500">
     </div>
 
     <div class="form-group">
-      <label>Random Activity Frequency</label>
+      <label>Random Activity Frequency (When Idle)</label>
       <select id="set-freq">
         <option value="calm">Calm (Every 8-16s)</option>
         <option value="normal" selected>Normal (Every 4-9s)</option>
@@ -368,38 +479,24 @@
     </div>
   </div>
 
-  <!-- Section 5: OBS Browser Source Setup Guide -->
-  <div class="card">
-    <div class="card-title">📺 OBS Studio Setup</div>
-    <div class="obs-setup-box">
-      <strong>1. Add Overlay to OBS:</strong><br>
-      Add a <em>Browser Source</em> in OBS with URL:
-      <span class="code-pill" id="obs-url-display">http://localhost:8000/obs_overlay.html</span>
-      Set <strong>Width: 420</strong>, <strong>Height: 480</strong>.<br>
-      Ensure <em>Shutdown source when not visible</em> is <strong>unchecked</strong>.
-      <br><br>
-      <strong>2. Dock this Control Panel into OBS:</strong><br>
-      In OBS menu: <strong>Docks</strong> &rarr; <strong>Custom Browser Docks...</strong><br>
-      Dock Name: <code>Buddy Pet Control</code><br>
-      URL: <code id="dock-url-display">http://localhost:8000/obs_dock.html</code>
-    </div>
-  </div>
-
   <script>
-    // Broadcast channel for instantaneous zero-latency local communication
+    // Tab switching
+    function switchView(tabId, el) {
+      document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const target = document.getElementById(tabId);
+      if (target) target.style.display = 'block';
+      if (el) el.classList.add('active');
+    }
+
+    // Communication via BroadcastChannel & LocalStorage
     let channel = null;
     try {
       channel = new BroadcastChannel('buddy_obs_channel');
-    } catch (e) {
-      console.warn('BroadcastChannel error:', e);
-    }
+    } catch (e) {}
 
     function sendCommand(cmdData) {
-      // 1. Send via BroadcastChannel
-      if (channel) {
-        channel.postMessage(cmdData);
-      }
-      // 2. Fallback via LocalStorage event
+      if (channel) channel.postMessage(cmdData);
       try {
         localStorage.setItem('buddy_obs_command', JSON.stringify({
           ...cmdData,
@@ -408,27 +505,40 @@
       } catch (e) {}
     }
 
-    // Trigger subscriber alert
-    document.getElementById('btn-fire-sub').addEventListener('click', () => {
-      const name = document.getElementById('sub-name').value.trim() || 'New Subscriber';
-      const tier = document.getElementById('sub-tier').value;
-      const message = document.getElementById('sub-msg').value.trim();
+    // Save Live Account Tokens
+    document.getElementById('btn-save-integrations').addEventListener('click', () => {
+      const streamlabsToken = document.getElementById('input-streamlabs-token').value.trim();
+      const twitchChannel = document.getElementById('input-twitch-channel').value.trim();
 
+      const saved = {
+        streamlabsToken: streamlabsToken,
+        twitchChannel: twitchChannel
+      };
+
+      try {
+        localStorage.setItem('buddy_stream_settings', JSON.stringify(saved));
+      } catch (e) {}
+
+      sendCommand({
+        type: 'UPDATE_SETTINGS',
+        settings: saved
+      });
+
+      alert('✅ Settings saved! If your overlay is open in OBS, it will connect immediately.');
+    });
+
+    // Simulate Platform Alerts
+    function simulatePlatform(platform, name, tier, message) {
       sendCommand({
         type: 'SUBSCRIBER_ALERT',
         name: name,
+        platform: platform,
         tier: tier,
         message: message
       });
-    });
-
-    function quickSub(name, tier) {
-      document.getElementById('sub-name').value = name;
-      document.getElementById('sub-tier').value = tier;
-      document.getElementById('btn-fire-sub').click();
     }
 
-    // Custom Thought Bubble
+    // Custom Thought Bubble (AFK messages)
     document.getElementById('btn-say-custom').addEventListener('click', () => {
       const text = document.getElementById('custom-bubble-text').value.trim();
       if (!text) return;
@@ -441,10 +551,29 @@
 
     function setCustomText(text) {
       document.getElementById('custom-bubble-text').value = text;
-      document.getElementById('btn-say-custom').click();
+      sendCommand({
+        type: 'CUSTOM_THOUGHT',
+        text: text,
+        duration: parseInt(document.getElementById('set-duration').value, 10)
+      });
     }
 
-    // Manual Animation Trigger
+    // Manual Sub Alert
+    document.getElementById('btn-fire-sub').addEventListener('click', () => {
+      const name = document.getElementById('sub-name').value.trim() || 'New Subscriber';
+      const platform = document.getElementById('sub-platform').value;
+      const message = document.getElementById('sub-msg').value.trim();
+
+      sendCommand({
+        type: 'SUBSCRIBER_ALERT',
+        name: name,
+        platform: platform,
+        tier: 'Subscriber',
+        message: message
+      });
+    });
+
+    // Manual Animations
     function triggerAnim(animName, loops) {
       sendCommand({
         type: 'TRIGGER_ANIMATION',
@@ -453,15 +582,15 @@
       });
     }
 
-    function triggerSoundOnly() {
+    function triggerBarkOnly() {
       sendCommand({
         type: 'CUSTOM_THOUGHT',
         text: 'Woof! 🐾',
-        duration: 2000
+        duration: 2500
       });
     }
 
-    // Settings sync
+    // Settings Sync
     function pushSettings() {
       const duration = parseInt(document.getElementById('set-duration').value, 10);
       document.getElementById('dur-val').textContent = (duration / 1000).toFixed(1);
@@ -482,13 +611,17 @@
     document.getElementById('set-duration').addEventListener('input', pushSettings);
     document.getElementById('set-freq').addEventListener('change', pushSettings);
 
-    // Update URLs in helper box
-    const currentLoc = window.location.href;
-    const base = currentLoc.substring(0, currentLoc.lastIndexOf('/') + 1);
-    if (base) {
-      document.getElementById('obs-url-display').textContent = base + 'obs_overlay.html';
-      document.getElementById('dock-url-display').textContent = base + 'obs_dock.html';
-    }
+    // Load saved settings on startup
+    window.addEventListener('DOMContentLoaded', () => {
+      try {
+        const saved = localStorage.getItem('buddy_stream_settings');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.streamlabsToken) document.getElementById('input-streamlabs-token').value = parsed.streamlabsToken;
+          if (parsed.twitchChannel) document.getElementById('input-twitch-channel').value = parsed.twitchChannel;
+        }
+      } catch (e) {}
+    });
   </script>
 </body>
 </html>

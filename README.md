@@ -165,17 +165,40 @@ Buddy includes dedicated streaming modules designed specifically for **OBS Studi
 - Includes instant test buttons, manual animation triggers (*Force Jump*, *Force Wag*, *Custom Thoughts*), TTS toggle, and random behavior frequency controls.
 
 ### 3. Quick Setup in OBS Studio
-1. Start local server in the project folder:
+1. Start the included stream server in your project folder:
    ```powershell
-   python -m http.server 8000
+   python server.py
    ```
+   *(Or standard `python -m http.server 8000`)*
 2. **Add Browser Source in OBS**:
    - URL: `http://localhost:8000/obs_overlay.html`
-   - Width: `420`, Height: `480`
+   - Width: `440`, Height: `490`
    - Check *Control audio via OBS* (optional)
    - Uncheck *Shutdown source when not visible*
 3. **Add Control Dock in OBS**:
    - In OBS menu: **Docks** &rarr; **Custom Browser Docks...**
    - Dock Name: `Buddy Pet Control`
    - URL: `http://localhost:8000/obs_dock.html`
-   - Click *Apply* and drag the dock next to your OBS Audio Mixer or Scene list!
+   - Click *Apply* and dock it next to your chat or mixer!
+
+---
+
+## 🔴 Automatic YouTube & 🟣 Twitch Live Detection
+
+Buddy connects dynamically to live streams to automatically detect real subscriber names without requiring manual clicks:
+
+### How Dynamic Alerts Work:
+1. **Zero-Lag Streamlabs Socket API (Recommended for YouTube & Twitch)**:
+   - Connect your YouTube channel or Twitch account to [Streamlabs.com](https://streamlabs.com) (free).
+   - In Streamlabs, copy your **Socket API Token** (*Settings &rarr; API Settings &rarr; API Tokens*).
+   - Paste it into the **Buddy Control Dock** under **Auto-Alerts** and click **Save**.
+   - Whenever someone subscribes, becomes a **Channel Member**, or sends a **Super Chat** on YouTube (or subscribes on Twitch), Buddy instantly receives the event, triggers the celebratory jump, wags his tail, displays their real name in the thought bubble, and speaks their name via Text-To-Speech!
+2. **AFK & Custom Thought Bubble Mode**:
+   - In the Control Dock, switch to the **AFK & Quick Reactions** tab to pop up instant thought bubbles while you're away:
+     - ☕ *BRB getting coffee!*
+     - ⏱️ *Taking a quick 5 min break!*
+     - 🎮 *Stream Starting Soon!*
+     - Or any custom text you type!
+3. **Direct HTTP Webhook**:
+   - You can also trigger alerts from external scripts or bots via:
+     `http://localhost:8000/api/alert?name=SubscriberName&platform=youtube&tier=Subscriber`

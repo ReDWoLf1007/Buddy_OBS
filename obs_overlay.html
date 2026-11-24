@@ -10,34 +10,42 @@
       padding: 0;
     }
 
-    body {
+    html, body {
       background: transparent !important;
       overflow: hidden;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      align-items: center;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
       font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
       user-select: none;
     }
 
-    #pet-container {
+    #stage {
       position: relative;
-      width: 420px;
-      height: 480px;
+      width: 100%;
+      height: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-end;
+    }
+
+    #pet-container {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
       pointer-events: none;
     }
 
-    /* Thought Bubble Container */
+    /* Thought Bubble Container - Anchored right above Buddy's head */
     #thought-bubble {
       position: absolute;
-      top: 20px;
+      bottom: 275px;
       left: 50%;
       transform: translateX(-50%) scale(0);
       transform-origin: bottom center;
@@ -48,8 +56,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      max-width: 360px;
-      min-width: 240px;
+      max-width: 380px;
+      min-width: 260px;
+      width: max-content;
     }
 
     #thought-bubble.active {
@@ -61,13 +70,28 @@
     .bubble-card {
       background: #ffffff;
       border: 4px solid #f59e0b;
-      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.35), 0 0 20px rgba(245, 158, 11, 0.45);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 25px rgba(245, 158, 11, 0.45);
       border-radius: 28px;
       padding: 14px 22px;
       text-align: center;
       position: relative;
       color: #1f2937;
       animation: gentle-float 2.8s ease-in-out infinite;
+      transition: border-color 0.3s;
+    }
+
+    /* Dynamic Platform Border Accents */
+    .bubble-card.platform-youtube {
+      border-color: #ef4444;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 25px rgba(239, 68, 68, 0.4);
+    }
+    .bubble-card.platform-twitch {
+      border-color: #9333ea;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 25px rgba(147, 51, 234, 0.4);
+    }
+    .bubble-card.platform-member {
+      border-color: #10b981;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 0 25px rgba(16, 185, 129, 0.4);
     }
 
     @keyframes gentle-float {
@@ -86,7 +110,17 @@
       padding: 3px 12px;
       border-radius: 999px;
       margin-bottom: 6px;
-      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .bubble-badge.badge-youtube {
+      background: linear-gradient(135deg, #ff0000, #b91c1c);
+    }
+    .bubble-badge.badge-twitch {
+      background: linear-gradient(135deg, #9333ea, #6b21a8);
+    }
+    .bubble-badge.badge-member {
+      background: linear-gradient(135deg, #10b981, #047857);
     }
 
     .bubble-message {
@@ -104,6 +138,16 @@
       text-decoration: underline wavy #f59e0b;
     }
 
+    .bubble-card.platform-youtube .bubble-subname {
+      color: #dc2626;
+      text-decoration-color: #ef4444;
+    }
+
+    .bubble-card.platform-twitch .bubble-subname {
+      color: #7e22ce;
+      text-decoration-color: #a855f7;
+    }
+
     .bubble-footer {
       font-size: 13px;
       color: #6b7280;
@@ -115,7 +159,7 @@
     .thought-dots {
       position: relative;
       width: 100%;
-      height: 40px;
+      height: 38px;
       pointer-events: none;
     }
 
@@ -125,6 +169,17 @@
       border: 3.5px solid #f59e0b;
       border-radius: 50%;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      transition: border-color 0.3s;
+    }
+
+    .bubble-card.platform-youtube ~ .thought-dots .thought-dot {
+      border-color: #ef4444;
+    }
+    .bubble-card.platform-twitch ~ .thought-dots .thought-dot {
+      border-color: #9333ea;
+    }
+    .bubble-card.platform-member ~ .thought-dots .thought-dot {
+      border-color: #10b981;
     }
 
     .dot-1 {
@@ -138,14 +193,14 @@
     .dot-2 {
       width: 15px;
       height: 15px;
-      top: 15px;
+      top: 14px;
       left: 52%;
     }
 
     .dot-3 {
       width: 9px;
       height: 9px;
-      top: 29px;
+      top: 27px;
       left: 54%;
     }
 
@@ -153,9 +208,12 @@
     #pet-canvas {
       width: 320px;
       height: 320px;
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
       image-rendering: auto;
       z-index: 10;
-      filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.38));
+      filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.42));
     }
 
     /* Sparkle Particle FX */
@@ -163,7 +221,7 @@
       position: absolute;
       pointer-events: none;
       z-index: 30;
-      animation: burst-fade 1.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+      animation: burst-fade 1.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
     }
 
     @keyframes burst-fade {
@@ -172,7 +230,7 @@
         opacity: 1;
       }
       100% {
-        transform: translate(var(--tx), var(--ty)) scale(1.3) rotate(180deg);
+        transform: translate(var(--tx), var(--ty)) scale(1.35) rotate(180deg);
         opacity: 0;
       }
     }
@@ -180,29 +238,31 @@
 </head>
 <body>
 
-  <div id="pet-container">
-    <!-- Thought Bubble -->
-    <div id="thought-bubble">
-      <div class="bubble-card">
-        <div class="bubble-badge" id="bubble-badge">✨ NEW SUBSCRIBER ✨</div>
-        <div class="bubble-message" id="bubble-message">
-          Thank you, <span class="bubble-subname" id="bubble-subname">Friend</span>! 🐾💖
+  <div id="stage">
+    <div id="pet-container">
+      <!-- Thought Bubble (anchored above head) -->
+      <div id="thought-bubble">
+        <div class="bubble-card" id="bubble-card">
+          <div class="bubble-badge" id="bubble-badge">✨ NEW SUBSCRIBER ✨</div>
+          <div class="bubble-message" id="bubble-message">
+            Thank you, <span class="bubble-subname" id="bubble-subname">Friend</span>! 🐾💖
+          </div>
+          <div class="bubble-footer" id="bubble-footer">Welcome to the pack!</div>
         </div>
-        <div class="bubble-footer" id="bubble-footer">Welcome to the pack!</div>
+        <div class="thought-dots">
+          <div class="thought-dot dot-1"></div>
+          <div class="thought-dot dot-2"></div>
+          <div class="thought-dot dot-3"></div>
+        </div>
       </div>
-      <div class="thought-dots">
-        <div class="thought-dot dot-1"></div>
-        <div class="thought-dot dot-2"></div>
-        <div class="thought-dot dot-3"></div>
-      </div>
-    </div>
 
-    <!-- Canvas Animation -->
-    <canvas id="pet-canvas" width="320" height="320"></canvas>
+      <!-- Canvas Animation -->
+      <canvas id="pet-canvas" width="320" height="320"></canvas>
+    </div>
   </div>
 
   <script>
-    // --- SPRITE DATA & CONFIGURATION ---
+    // --- SPRITE DATA & SEQUENCES ---
     const SPRITE_CONFIG = {
       image_src: 'spritesheet.png',
       frame_size: 320,
@@ -221,37 +281,42 @@
     let sequenceLoopCount = 0;
     let targetLoopCount = 1;
     let lastFrameTime = 0;
-    let spriteImage = new Image();
     let isSpriteLoaded = false;
+    let useFallbackFrames = false;
+    let fallbackImages = {};
 
-    // Overlay Settings (can be controlled via Control Dock or URL params)
+    const spriteImage = new Image();
+
+    // Overlay Settings
     const settings = {
       enableTTS: true,
       ttsVolume: 0.9,
       ttsRate: 1.05,
-      ttsPitch: 1.25, // Playful cute voice
+      ttsPitch: 1.25,
       enableSound: true,
-      bubbleDuration: 5500, // ms
-      randomFrequency: 'normal', // 'off', 'calm', 'normal', 'hyper'
+      bubbleDuration: 5500,
+      randomFrequency: 'normal',
+      streamlabsToken: '',
+      streamelementsToken: '',
       twitchChannel: ''
     };
 
-    // Alert Queue for Subscribers
+    // Alert Queue
     const alertQueue = [];
     let isProcessingAlert = false;
     let alertTimer = null;
 
-    // Canvas elements
+    // DOM Elements
     const canvas = document.getElementById('pet-canvas');
     const ctx = canvas.getContext('2d');
     const thoughtBubble = document.getElementById('thought-bubble');
+    const bubbleCard = document.getElementById('bubble-card');
     const bubbleBadge = document.getElementById('bubble-badge');
     const bubbleMessage = document.getElementById('bubble-message');
     const bubbleSubname = document.getElementById('bubble-subname');
     const bubbleFooter = document.getElementById('bubble-footer');
-    const petContainer = document.getElementById('pet-container');
 
-    // --- SYNTHESIZED SOUND FX (Web Audio API) ---
+    // --- AUDIO & TTS SYNTHESIZER ---
     let audioCtx = null;
     function playHappyChime() {
       if (!settings.enableSound) return;
@@ -261,53 +326,46 @@
         if (audioCtx.state === 'suspended') audioCtx.resume();
 
         const now = audioCtx.currentTime;
-        // Two-tone cheerful chime (E5 -> G#5 -> B5)
-        const notes = [659.25, 830.61, 987.77];
+        const notes = [659.25, 830.61, 987.77, 1318.51];
         notes.forEach((freq, idx) => {
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
           osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+          osc.frequency.setValueAtTime(freq, now + idx * 0.1);
 
-          gain.gain.setValueAtTime(0, now + idx * 0.12);
-          gain.gain.linearRampToValueAtTime(0.25, now + idx * 0.12 + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.35);
+          gain.gain.setValueAtTime(0, now + idx * 0.1);
+          gain.gain.linearRampToValueAtTime(0.25, now + idx * 0.1 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.35);
 
           osc.connect(gain);
           gain.connect(audioCtx.destination);
 
-          osc.start(now + idx * 0.12);
-          osc.stop(now + idx * 0.12 + 0.4);
+          osc.start(now + idx * 0.1);
+          osc.stop(now + idx * 0.1 + 0.4);
         });
-      } catch (err) {
-        console.warn('Audio play error:', err);
-      }
+      } catch (err) {}
     }
 
-    // --- TEXT TO SPEECH (Web Speech API) ---
     function speakText(text) {
       if (!settings.enableTTS || !('speechSynthesis' in window)) return;
       try {
-        window.speechSynthesis.cancel(); // clear previous
+        window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.volume = settings.ttsVolume;
         utterance.rate = settings.ttsRate;
         utterance.pitch = settings.ttsPitch;
 
-        // Try selecting a natural English voice if available
         const voices = window.speechSynthesis.getVoices();
         const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Zira') || v.name.includes('Samantha')));
         if (preferredVoice) utterance.voice = preferredVoice;
 
         window.speechSynthesis.speak(utterance);
-      } catch (e) {
-        console.warn('TTS error:', e);
-      }
+      } catch (e) {}
     }
 
     // --- SPARKLE BURST GENERATOR ---
-    function spawnSparkles(count = 14) {
-      const symbols = ['✨', '⭐', '💖', '🐾', '🌟'];
+    function spawnSparkles(count = 16) {
+      const symbols = ['✨', '⭐', '💖', '🐾', '🌟', '🎉'];
       const rect = thoughtBubble.getBoundingClientRect();
       const originX = rect.width / 2;
       const originY = rect.height / 2;
@@ -321,14 +379,38 @@
         span.style.top = originY + 'px';
 
         const angle = Math.random() * Math.PI * 2;
-        const dist = 70 + Math.random() * 90;
+        const dist = 70 + Math.random() * 95;
         const tx = Math.cos(angle) * dist + 'px';
-        const ty = (Math.sin(angle) * dist - 20) + 'px';
+        const ty = (Math.sin(angle) * dist - 25) + 'px';
         span.style.setProperty('--tx', tx);
         span.style.setProperty('--ty', ty);
 
         thoughtBubble.appendChild(span);
-        setTimeout(() => span.remove(), 1300);
+        setTimeout(() => span.remove(), 1350);
+      }
+    }
+
+    // --- DRAW CURRENT FRAME ---
+    function drawCurrentFrame() {
+      if (!isSpriteLoaded) return;
+      const seq = SPRITE_CONFIG.sequences[currentSequence];
+      if (!seq) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (useFallbackFrames && fallbackImages[currentSequence]) {
+        const frameImg = fallbackImages[currentSequence][currentFrame];
+        if (frameImg && frameImg.complete) {
+          ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+        }
+      } else {
+        const sx = currentFrame * SPRITE_CONFIG.frame_size;
+        const sy = seq.row * SPRITE_CONFIG.frame_size;
+        ctx.drawImage(
+          spriteImage,
+          sx, sy, SPRITE_CONFIG.frame_size, SPRITE_CONFIG.frame_size,
+          0, 0, canvas.width, canvas.height
+        );
       }
     }
 
@@ -339,38 +421,29 @@
       currentFrame = 0;
       sequenceLoopCount = 0;
       targetLoopCount = loops;
+      drawCurrentFrame();
     }
 
-    // --- RENDER LOOP ---
     function animate(now) {
       requestAnimationFrame(animate);
-
       if (!isSpriteLoaded) return;
 
       const seq = SPRITE_CONFIG.sequences[currentSequence];
       const frameInterval = 1000 / seq.fps;
 
-      if (now - lastFrameTime >= frameInterval) {
-        lastFrameTime = now;
+      if (!lastFrameTime) lastFrameTime = now;
+      const elapsed = now - lastFrameTime;
 
-        // Draw current frame from master sprite sheet
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const sx = currentFrame * SPRITE_CONFIG.frame_size;
-        const sy = seq.row * SPRITE_CONFIG.frame_size;
+      if (elapsed >= frameInterval) {
+        lastFrameTime = now - (elapsed % frameInterval);
 
-        ctx.drawImage(
-          spriteImage,
-          sx, sy, SPRITE_CONFIG.frame_size, SPRITE_CONFIG.frame_size,
-          0, 0, canvas.width, canvas.height
-        );
+        drawCurrentFrame();
 
-        // Advance frame
         currentFrame++;
         if (currentFrame >= seq.count) {
           currentFrame = 0;
           sequenceLoopCount++;
 
-          // Handle transitions if we finished target loops (when not in alert)
           if (!isProcessingAlert && currentSequence !== 'idle') {
             if (sequenceLoopCount >= targetLoopCount) {
               setSequence('idle');
@@ -385,12 +458,10 @@
     function scheduleNextRandomAnimation() {
       if (settings.randomFrequency === 'off') return;
 
-      // Intervals based on frequency
       let minDelay = 4000;
       let maxDelay = 9000;
-
       if (settings.randomFrequency === 'calm') {
-        minDelay = 7000;
+        minDelay = 8000;
         maxDelay = 16000;
       } else if (settings.randomFrequency === 'hyper') {
         minDelay = 2500;
@@ -411,23 +482,19 @@
     function triggerRandomReaction() {
       const roll = Math.random();
       if (roll < 0.45) {
-        // Tail wag (2 to 4 cycles)
         setSequence('tail_wag', Math.floor(Math.random() * 3) + 2);
       } else if (roll < 0.70) {
-        // Blink
         setSequence('blinking', 1);
       } else if (roll < 0.88) {
-        // Playful Jump
         setSequence('jumping', 1);
       } else {
-        // Happy smile & glints
         setSequence('happy', 2);
       }
     }
 
-    // --- SUBSCRIBER ALERT HANDLER ---
-    function triggerSubscriberAlert(subData) {
-      alertQueue.push(subData);
+    // --- SUBSCRIBER & EVENT ALERT HANDLER ---
+    function triggerSubscriberAlert(eventData) {
+      alertQueue.push(eventData);
       if (!isProcessingAlert) {
         processNextAlert();
       }
@@ -447,11 +514,33 @@
 
       const data = alertQueue.shift();
       const subscriberName = data.name || 'Anonymous Fan';
-      const tier = data.tier || 'Tier 1';
-      const customMsg = data.message;
+      const platform = (data.platform || 'General').toLowerCase();
+      const tier = data.tier || 'Subscriber';
+      const customMsg = data.message || '';
 
-      // 1. Update Thought Bubble content
-      bubbleBadge.textContent = `✨ NEW ${tier.toUpperCase()} SUBSCRIBER! ✨`;
+      bubbleCard.className = 'bubble-card';
+      bubbleBadge.className = 'bubble-badge';
+
+      if (platform.includes('youtube')) {
+        bubbleCard.classList.add('platform-youtube');
+        bubbleBadge.classList.add('badge-youtube');
+        if (tier.toLowerCase().includes('member') || tier.toLowerCase().includes('sponsor')) {
+          bubbleCard.classList.add('platform-member');
+          bubbleBadge.classList.add('badge-member');
+          bubbleBadge.textContent = '⭐ YOUTUBE MEMBER!';
+        } else if (tier.toLowerCase().includes('superchat')) {
+          bubbleBadge.textContent = '💰 YOUTUBE SUPER CHAT!';
+        } else {
+          bubbleBadge.textContent = '🔴 YOUTUBE SUBSCRIBER!';
+        }
+      } else if (platform.includes('twitch')) {
+        bubbleCard.classList.add('platform-twitch');
+        bubbleBadge.classList.add('badge-twitch');
+        bubbleBadge.textContent = '🟣 TWITCH SUBSCRIBER!';
+      } else {
+        bubbleBadge.textContent = `✨ NEW ${tier.toUpperCase()}! ✨`;
+      }
+
       bubbleSubname.textContent = subscriberName;
       if (customMsg) {
         bubbleFooter.textContent = `"${customMsg}"`;
@@ -459,23 +548,20 @@
         bubbleFooter.textContent = 'Welcome to the pack! 🐾';
       }
 
-      // 2. Play reaction: Exciting jump first, then switch to happy loop!
       setSequence('jumping', 1);
       setTimeout(() => {
         if (isProcessingAlert) {
-          setSequence('happy', 999); // loop happy while bubble is visible
+          setSequence('happy', 999);
         }
       }, 750);
 
-      // 3. Pop in bubble with audio & TTS
       setTimeout(() => {
         thoughtBubble.classList.add('active');
         playHappyChime();
-        spawnSparkles(18);
+        spawnSparkles(20);
         speakText(`Thank you, ${subscriberName}!`);
       }, 200);
 
-      // 4. Bubble display duration timer
       alertTimer = setTimeout(() => {
         thoughtBubble.classList.remove('active');
         setTimeout(() => {
@@ -491,6 +577,8 @@
     }
 
     function manualCustomThought(message, duration = 4000) {
+      bubbleCard.className = 'bubble-card';
+      bubbleBadge.className = 'bubble-badge';
       bubbleBadge.textContent = '💬 BUDDY SAYS';
       bubbleMessage.innerHTML = `<span>${message}</span>`;
       bubbleFooter.textContent = 'Woof! 🐾';
@@ -506,38 +594,168 @@
       }, duration);
     }
 
-    // --- COMMUNICATION INTERFACES ---
-
-    // 1. BroadcastChannel (Real-time local communication with Control Dock)
-    try {
-      const channel = new BroadcastChannel('buddy_obs_channel');
-      channel.onmessage = (event) => {
-        handleControlMessage(event.data);
+    // --- ASYNC SOCKET.IO & LIVE INTEGRATIONS ---
+    function loadSocketIOAsync() {
+      if (typeof io !== 'undefined') {
+        if (settings.streamlabsToken) connectStreamlabs(settings.streamlabsToken);
+        if (settings.streamelementsToken) connectStreamElements(settings.streamelementsToken);
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js';
+      s.async = true;
+      s.onload = () => {
+        if (settings.streamlabsToken) connectStreamlabs(settings.streamlabsToken);
+        if (settings.streamelementsToken) connectStreamElements(settings.streamelementsToken);
       };
-    } catch (e) {
-      console.warn('BroadcastChannel not supported:', e);
+      document.head.appendChild(s);
     }
 
-    // 2. LocalStorage event fallback
+    let streamlabsSocket = null;
+    function connectStreamlabs(token) {
+      if (!token || typeof io === 'undefined') return;
+      try {
+        if (streamlabsSocket) streamlabsSocket.disconnect();
+        streamlabsSocket = io(`https://sockets.streamlabs.com?token=${token}`, {
+          transports: ['websocket'],
+          reconnection: true
+        });
+
+        streamlabsSocket.on('event', (eventData) => {
+          if (!eventData || !eventData.type) return;
+
+          if (eventData.type === 'subscription') {
+            const msg = eventData.message && eventData.message[0] ? eventData.message[0] : {};
+            const isYouTube = eventData.for === 'youtube_account' || msg.for === 'youtube_account';
+            triggerSubscriberAlert({
+              name: msg.name || 'New Subscriber',
+              platform: isYouTube ? 'YouTube' : 'Twitch',
+              tier: msg.sub_type || 'Subscriber',
+              message: msg.message || ''
+            });
+          } else if (eventData.type === 'sponsor' || eventData.type === 'membership') {
+            const msg = eventData.message && eventData.message[0] ? eventData.message[0] : {};
+            triggerSubscriberAlert({
+              name: msg.name || 'New Member',
+              platform: 'YouTube',
+              tier: 'Member',
+              message: msg.message || 'Joined channel membership! ⭐'
+            });
+          } else if (eventData.type === 'superchat') {
+            const msg = eventData.message && eventData.message[0] ? eventData.message[0] : {};
+            triggerSubscriberAlert({
+              name: msg.name || 'Super Chatter',
+              platform: 'YouTube',
+              tier: 'Super Chat',
+              message: `${msg.formatted_amount || ''} ${msg.comment || ''}`.trim()
+            });
+          }
+        });
+      } catch (err) {}
+    }
+
+    let streamElementsSocket = null;
+    function connectStreamElements(jwtToken) {
+      if (!jwtToken || typeof io === 'undefined') return;
+      try {
+        if (streamElementsSocket) streamElementsSocket.disconnect();
+        streamElementsSocket = io('https://realtime.streamelements.com', { transports: ['websocket'] });
+        streamElementsSocket.on('connect', () => {
+          streamElementsSocket.emit('authenticate', { method: 'jwt', token: jwtToken });
+        });
+        streamElementsSocket.on('event', (data) => {
+          if (!data) return;
+          const type = data.type || data.listener;
+          const eventInfo = data.data || {};
+          const isYouTube = data.provider === 'youtube';
+          if (type === 'subscriber') {
+            triggerSubscriberAlert({
+              name: eventInfo.username || 'Subscriber',
+              platform: isYouTube ? 'YouTube' : 'Twitch',
+              tier: eventInfo.tier || 'Subscriber'
+            });
+          } else if (type === 'sponsor') {
+            triggerSubscriberAlert({
+              name: eventInfo.username || 'Member',
+              platform: 'YouTube',
+              tier: 'Member'
+            });
+          }
+        });
+      } catch (e) {}
+    }
+
+    function connectTwitchChat(channelName) {
+      if (!channelName) return;
+      channelName = channelName.toLowerCase().replace('#', '');
+      const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+      ws.onopen = () => {
+        ws.send('CAP REQ :twitch.tv/commands twitch.tv/tags');
+        ws.send('PASS oauth:dummy');
+        ws.send('NICK justinfan' + Math.floor(Math.random() * 99999));
+        ws.send('JOIN #' + channelName);
+      };
+      ws.onmessage = (msg) => {
+        const text = msg.data;
+        if (text.startsWith('PING')) {
+          ws.send('PONG :tmi.twitch.tv');
+          return;
+        }
+        if (text.includes('USERNOTICE')) {
+          const matchSub = text.match(/msg-id=(sub|resub|subgift);/);
+          const matchUser = text.match(/display-name=([^;]+);/);
+          if (matchSub && matchUser) {
+            triggerSubscriberAlert({
+              name: matchUser[1],
+              platform: 'Twitch',
+              tier: matchSub[1] === 'subgift' ? 'Gift Sub' : 'Twitch Sub'
+            });
+          }
+        }
+        if (text.includes('PRIVMSG')) {
+          const matchCmd = text.match(/!sub\s+([a-zA-Z0-9_]+)/i);
+          if (matchCmd) {
+            triggerSubscriberAlert({
+              name: matchCmd[1],
+              platform: 'Twitch',
+              tier: 'Chat Alert'
+            });
+          }
+        }
+      };
+    }
+
+    // --- BROADCAST & LOCAL COMMUNICATION ---
+    try {
+      const channel = new BroadcastChannel('buddy_obs_channel');
+      channel.onmessage = (event) => handleControlMessage(event.data);
+    } catch (e) {}
+
+    try {
+      if (window.location.protocol.startsWith('http')) {
+        const evtSource = new EventSource('/events');
+        evtSource.onmessage = (e) => {
+          try {
+            handleControlMessage(JSON.parse(e.data));
+          } catch (err) {}
+        };
+      }
+    } catch (e) {}
+
     window.addEventListener('storage', (event) => {
       if (event.key === 'buddy_obs_command' && event.newValue) {
         try {
-          const data = JSON.parse(event.newValue);
-          handleControlMessage(data);
+          handleControlMessage(JSON.parse(event.newValue));
         } catch (e) {}
       }
     });
 
-    // 3. PostMessage interface
     window.addEventListener('message', (event) => {
-      if (event.data) {
-        handleControlMessage(event.data);
-      }
+      if (event.data) handleControlMessage(event.data);
     });
 
     function handleControlMessage(data) {
       if (!data || !data.type) return;
-
       switch (data.type) {
         case 'SUBSCRIBER_ALERT':
           triggerSubscriberAlert(data);
@@ -551,20 +769,73 @@
         case 'UPDATE_SETTINGS':
           Object.assign(settings, data.settings);
           scheduleNextRandomAnimation();
+          if (data.settings.streamlabsToken) {
+            settings.streamlabsToken = data.settings.streamlabsToken;
+            loadSocketIOAsync();
+          }
+          if (data.settings.twitchChannel) {
+            settings.twitchChannel = data.settings.twitchChannel;
+            connectTwitchChat(settings.twitchChannel);
+          }
           break;
       }
     }
 
-    // --- URL PARAMETER PARSER ---
+    // --- FALLBACK TO INDIVIDUAL FRAME FILES (Zero-failure guarantee) ---
+    function fallbackToFrameFiles() {
+      useFallbackFrames = true;
+      const sequencesToLoad = {
+        idle: 8,
+        tail_wag: 8,
+        blinking: 4,
+        jumping: 8,
+        happy: 6
+      };
+      let loadedCount = 0;
+      for (const [seqKey, count] of Object.entries(sequencesToLoad)) {
+        fallbackImages[seqKey] = [];
+        for (let i = 0; i < count; i++) {
+          const img = new Image();
+          img.src = `frames/${seqKey}/${seqKey}_${i}.png`;
+          img.onload = () => {
+            loadedCount++;
+            if (!isSpriteLoaded && loadedCount >= 1) {
+              onSpriteReady();
+            }
+          };
+          fallbackImages[seqKey].push(img);
+        }
+      }
+    }
+
+    function onSpriteReady() {
+      if (isSpriteLoaded) return;
+      isSpriteLoaded = true;
+      setSequence('idle');
+      drawCurrentFrame();
+      scheduleNextRandomAnimation();
+      requestAnimationFrame(animate);
+    }
+
+    // --- INITIALIZATION ---
     function parseURLParams() {
       const params = new URLSearchParams(window.location.search);
       if (params.has('sub')) {
         setTimeout(() => {
           triggerSubscriberAlert({
             name: params.get('sub'),
-            tier: params.get('tier') || 'Tier 1'
+            platform: params.get('platform') || 'YouTube',
+            tier: params.get('tier') || 'Subscriber'
           });
         }, 1200);
+      }
+      if (params.has('streamlabs')) {
+        settings.streamlabsToken = params.get('streamlabs');
+        loadSocketIOAsync();
+      }
+      if (params.has('twitch')) {
+        settings.twitchChannel = params.get('twitch');
+        connectTwitchChat(settings.twitchChannel);
       }
       if (params.has('tts')) {
         settings.enableTTS = params.get('tts') !== '0' && params.get('tts') !== 'false';
@@ -572,78 +843,41 @@
       if (params.has('sound')) {
         settings.enableSound = params.get('sound') !== '0' && params.get('sound') !== 'false';
       }
-      if (params.has('freq')) {
-        settings.randomFrequency = params.get('freq');
-      }
-      if (params.has('duration')) {
-        settings.bubbleDuration = parseInt(params.get('duration'), 10) || 5500;
-      }
-      if (params.has('twitch')) {
-        connectTwitchChat(params.get('twitch'));
-      }
-    }
 
-    // --- TWITCH CHAT WEBSOCKET INTEGRATION (OPTIONAL ZERO-CONFIG) ---
-    function connectTwitchChat(channelName) {
-      if (!channelName) return;
-      channelName = channelName.toLowerCase().replace('#', '');
-      const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
-
-      ws.onopen = () => {
-        ws.send('CAP REQ :twitch.tv/commands twitch.tv/tags');
-        ws.send('PASS oauth:dummy');
-        ws.send('NICK justinfan' + Math.floor(Math.random() * 99999));
-        ws.send('JOIN #' + channelName);
-        console.log('Connected to Twitch chat for #' + channelName);
-      };
-
-      ws.onmessage = (msg) => {
-        const text = msg.data;
-        if (text.startsWith('PING')) {
-          ws.send('PONG :tmi.twitch.tv');
-          return;
-        }
-
-        // Sub / Resub notices
-        if (text.includes('USERNOTICE')) {
-          const matchSub = text.match(/msg-id=(sub|resub|subgift);/);
-          const matchUser = text.match(/display-name=([^;]+);/);
-          if (matchSub && matchUser) {
-            triggerSubscriberAlert({
-              name: matchUser[1],
-              tier: 'Twitch Sub'
-            });
+      try {
+        const savedSettings = localStorage.getItem('buddy_stream_settings');
+        if (savedSettings) {
+          const parsed = JSON.parse(savedSettings);
+          if (parsed.streamlabsToken) {
+            settings.streamlabsToken = parsed.streamlabsToken;
+            loadSocketIOAsync();
+          }
+          if (parsed.twitchChannel) {
+            settings.twitchChannel = parsed.twitchChannel;
+            connectTwitchChat(settings.twitchChannel);
           }
         }
-
-        // Streamer test command in chat: !sub <name>
-        if (text.includes('PRIVMSG')) {
-          const matchCmd = text.match(/!sub\s+([a-zA-Z0-9_]+)/i);
-          if (matchCmd) {
-            triggerSubscriberAlert({
-              name: matchCmd[1],
-              tier: 'Chat Alert'
-            });
-          }
-        }
-      };
-
-      ws.onerror = (e) => console.warn('Twitch WS error:', e);
+      } catch (e) {}
     }
 
-    // --- INITIALIZATION ---
     function init() {
-      spriteImage.onload = () => {
-        isSpriteLoaded = true;
-        setSequence('idle');
-        scheduleNextRandomAnimation();
-        requestAnimationFrame(animate);
-      };
-      spriteImage.src = SPRITE_CONFIG.image_src;
+      spriteImage.onload = () => onSpriteReady();
+      spriteImage.onerror = () => fallbackToFrameFiles();
+
+      if (spriteImage.complete && spriteImage.naturalWidth > 0) {
+        onSpriteReady();
+      } else {
+        spriteImage.src = SPRITE_CONFIG.image_src;
+      }
+
       parseURLParams();
     }
 
-    window.addEventListener('DOMContentLoaded', init);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
   </script>
 </body>
 </html>
